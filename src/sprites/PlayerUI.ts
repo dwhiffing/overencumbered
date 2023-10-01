@@ -6,6 +6,7 @@ import {
   BAR_WIDTH,
   BAR_HEIGHT,
   IPlayer,
+  XP_LEVELS,
 } from '../utils'
 
 export class PlayerUI {
@@ -70,9 +71,20 @@ export class PlayerUI {
       BAR_HEIGHT,
       'green',
     )
+
+    const xpBar = new Bar(
+      this.scene,
+      x + PORTRAIT_SIZE,
+      y + BAR_HEIGHT * 3,
+      BAR_WIDTH,
+      BAR_HEIGHT,
+      'cyan',
+    )
     const d = this.scene.data.get(`player-${key}`)
     healthBar.setMax(d?.health ?? 0)
     fatigueBar.setMax(d?.maxFatigue ?? 0)
+    xpBar.setMax(XP_LEVELS[1])
+    xpBar.update(0)
     healthBar.update(d?.health ?? 0)
 
     this.scene.data.events.on(
@@ -80,6 +92,8 @@ export class PlayerUI {
       (a: any, c: IPlayer) => {
         healthBar.update(c.health)
         fatigueBar.update(c.fatigue)
+        xpBar.setMax(XP_LEVELS[c.level])
+        xpBar.update(c.experience - XP_LEVELS[c.level - 1])
       },
     )
   }

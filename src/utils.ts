@@ -14,6 +14,8 @@ export interface IPlayer {
   maxHealth: number
   fatigue: number
   damage: number
+  experience: number
+  level: number
   armor: number
   color: number
   maxFatigue: number
@@ -108,33 +110,40 @@ export const ITEMS = {
   },
 }
 
+const DEFAULT_PLAYER = {
+  damage: 1,
+  health: 1,
+  armor: 0,
+  experience: 0,
+  level: 1,
+  fatigue: 1,
+  color: 0xffffff,
+  drops: [],
+}
 export const STATS = {
   archer: {
+    ...DEFAULT_PLAYER,
     damage: 5,
     health: 20,
-    armor: 0,
     fatigue: 10,
     color: 0x55ff55,
-    drops: [],
   },
   mage: {
+    ...DEFAULT_PLAYER,
     damage: 5,
     health: 20,
-    armor: 0,
     fatigue: 50,
     color: 0x5555ff,
-    drops: [],
   },
   knight: {
+    ...DEFAULT_PLAYER,
     damage: 2,
     health: 20,
-    armor: 0,
     fatigue: 20,
     color: 0xff5555,
-    drops: [],
   },
   red_slime: {
-    armor: 0,
+    ...DEFAULT_PLAYER,
     damage: 3,
     health: 5,
     fatigue: 30,
@@ -142,7 +151,7 @@ export const STATS = {
     drops: ['red_slime', 'flask'],
   },
   blue_slime: {
-    armor: 0,
+    ...DEFAULT_PLAYER,
     damage: 3,
     health: 20,
     fatigue: 30,
@@ -150,7 +159,7 @@ export const STATS = {
     drops: ['blue_slime', 'flask'],
   },
   green_slime: {
-    armor: 0,
+    ...DEFAULT_PLAYER,
     damage: 3,
     health: 20,
     fatigue: 30,
@@ -193,3 +202,11 @@ export const INITIAL_INV = {
 
 export const TOOLTIP_WIDTH = 175
 export const TOOLTIP_HEIGHT = 150
+
+let n = 0
+let c = 0
+const d = 5
+export const XP_LEVELS = new Array(100).fill('').map((_, i) => {
+  n += c++ * d
+  return n
+})

@@ -1,5 +1,5 @@
 import Game from '../scenes/Game'
-import { SPEED, STATS, ATTACK_SPEED, IPlayer, IItem } from '../utils'
+import { SPEED, STATS, ATTACK_SPEED, IPlayer, IItem, XP_LEVELS } from '../utils'
 import { Bar } from './Bar'
 
 export class Player extends Phaser.GameObjects.Sprite {
@@ -28,6 +28,8 @@ export class Player extends Phaser.GameObjects.Sprite {
     this.setGameData('health', 0)
     this.setGameData('maxHealth', 0)
     this.setGameData('fatigue', 0)
+    this.setGameData('experience', 0)
+    this.setGameData('level', 1)
     this.setGameData('damage', 0)
     this.setGameData('color', 0x000000)
     this.setGameData('maxFatigue', 0)
@@ -69,7 +71,7 @@ export class Player extends Phaser.GameObjects.Sprite {
 
   usePotion = (potion: IItem) => {
     this.scene.inventoryService?.removeItem(potion.key)
-    this.scene.inventoryService?.render()
+    this.scene.inventoryService?.renderInventory()
     this.setGameData('health', this.getGameData().maxHealth)
   }
 
@@ -105,11 +107,14 @@ export class Player extends Phaser.GameObjects.Sprite {
   }
 
   spawn(type: string) {
-    let { health, fatigue, color } = STATS[type as keyof typeof STATS]
+    let { health, fatigue, color, level, experience } =
+      STATS[type as keyof typeof STATS]
     this.playerType = type
     this.setTintFill(color)
     this.updateStats()
     this.setGameData('health', health)
+    this.setGameData('level', level)
+    this.setGameData('experience', experience)
     this.setGameData('fatigue', 0)
     this.setGameData('color', color)
     this.healthBar.setMax(health)
@@ -139,7 +144,7 @@ export class Player extends Phaser.GameObjects.Sprite {
       duration: ATTACK_SPEED / SPEED,
       yoyo: true,
       onYoyo: () => {
-        target.damage(this.getGameData()?.damage ?? 1)
+        target.damage(this.getGameData()?.damage ?? 1, this)
       },
     })
   }
@@ -152,7 +157,7 @@ export class Player extends Phaser.GameObjects.Sprite {
       [k]: v,
     })
 
-  damage(incomingDamage: number) {
+  damage(incomingDamage: number, damager: Player) {
     const health = this.getGameData().health
     const armor = this.getGameData().armor
     const mitigatedDamage = incomingDamage - armor
@@ -161,21 +166,41 @@ export class Player extends Phaser.GameObjects.Sprite {
     this.setTintFill(0xffffff)
     this.scene.time.delayedCall(ATTACK_SPEED / SPEED / 2, () => {
       this.setTintFill(this.getGameData().color)
-      if (newHealth <= 0) this.die()
+      if (newHealth <= 0) this.die(damager)
     })
   }
 
-  die() {
+  levelUp() {
+    this.setGameData('level', this.getGameData().level + 1)
+    const s = this.scene.inventoryService
+    if (!s) return
+    const inv = s.getInventory()
+    this.scene.data.set(`inventory-${this.dataKey}`, {
+      ...inv,
+      availableCellCount: inv.availableCellCount + 1,
+    })
+    this.scene.inventoryService?.renderInventory()
+  }
+  getExperience(amount: number) {
+    this.setGameData('experience', this.getGameData().experience + amount)
+    if (this.getGameData().experience >= XP_LEVELS[this.getGameData().level]) {
+      this.levelUp()
+    }
+  }
+
+  die(damager: Player) {
     if (this.alpha === 0) return
     this.setGameData('health', 0)
     this.healthBar?.hide()
     this.fatigueBar?.hide()
     this.setAlpha(0)
+
+    damager.getExperience(this.getGameData().level)
     const isEnemy = !!this.dataKey.match(/enemy/)
     if (isEnemy) {
       let { drops } = STATS[this.playerType as keyof typeof STATS]
-      if (Phaser.Math.RND.between(0, 1) === 0)
-        this.scene.inventoryService?.dropLoot(this.x - 16, this.y - 60, drops)
+      // if (Phaser.Math.RND.between(0, 1) === 0)
+      this.scene.inventoryService?.dropLoot(this.x - 16, this.y - 60, drops)
     }
   }
 }

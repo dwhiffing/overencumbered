@@ -21,6 +21,7 @@ export class Bar {
       red: [0xff0000, 0x000000],
       green: [0x00ff00, 0x000000],
       blue: [0x0000ff, 0x000000],
+      cyan: [0x00ffff, 0x000000],
     }
 
     this.bg = this.scene.add
