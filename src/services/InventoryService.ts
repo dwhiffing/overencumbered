@@ -438,7 +438,7 @@ export default class {
       if (!item) return
       item.spawn(o.type, o.key)
       item.setPosition(o.x, o.y)
-      // item.float()
+      item.float()
     })
   }
 
