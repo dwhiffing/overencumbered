@@ -177,9 +177,8 @@ export class Player extends Phaser.GameObjects.Sprite {
     this.setAlpha(0)
     const isEnemy = !!this.dataKey.match(/enemy/)
     if (isEnemy) {
-      //  TODO: Loot
-      // if (Phaser.Math.RND.between(0, 1) === 0)
-      //   this.scene.inventoryService?.dropLoot(this.x - 16, this.y - 32)
+      if (Phaser.Math.RND.between(0, 1) === 0)
+        this.scene.inventoryService?.dropLoot(this.x - 16, this.y - 32)
     }
   }
 }

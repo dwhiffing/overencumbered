@@ -283,13 +283,14 @@ export default class {
   }
 
   dropLoot(x: number, y: number) {
-    // TODO:
-    const i = this.items?.find((i) => !i.alpha)
-    i?.setAlpha(1)
-    i?.setPosition(
-      x + Phaser.Math.RND.between(-5, 5),
-      y + Phaser.Math.RND.between(-5, 5),
-    )
+    const type = Phaser.Math.RND.weightedPick(['slime', 'flask'])
+    this.scene.data.values['ground-items'].push({
+      type,
+      key: Phaser.Math.RND.uuid(),
+      x: x + Phaser.Math.RND.between(-5, 5),
+      y: y + Phaser.Math.RND.between(-5, 5),
+    })
+    this.render()
   }
 
   moveItem(

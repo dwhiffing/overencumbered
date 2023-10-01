@@ -33,7 +33,6 @@ export class Item extends Phaser.GameObjects.Sprite {
   }
 
   spawn(itemType?: string, itemKey?: string) {
-    // TODO: width/height
     const stats = ITEMS[itemType as keyof typeof ITEMS]
     if (stats) {
       this.setTintFill(stats.color)
