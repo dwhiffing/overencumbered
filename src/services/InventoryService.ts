@@ -4,6 +4,7 @@ import {
   IItem,
   INITIAL_CELLS,
   INITIAL_INV,
+  ITEMS,
   OFFSET_X,
   OFFSET_Y,
   RECIPES,
@@ -55,6 +56,8 @@ export default class {
     this.scene.data.set(`inventory-player-0`, INITIAL_INV)
     this.scene.data.set(`inventory-player-1`, INITIAL_INV)
     this.scene.data.set(`inventory-player-2`, INITIAL_INV)
+    this.addItem('sword')
+    this.addItem('helmet')
     this.addItem('flask')
     this.addItem('flask')
     this.addItem('slime')
@@ -70,13 +73,7 @@ export default class {
       if (this.selectedItem) {
         this.moveSelectedItem(p.x, p.y)
       } else {
-        const clickedItem = this.items
-          ?.filter((i) => i.alpha)
-          ?.find((o) => {
-            const pos = screenToTile(p)
-            const _pos = screenToTile(o)
-            return _pos.x === pos.x && _pos.y === pos.y
-          })
+        const clickedItem = this.getClickedItem(p)
         if (clickedItem) {
           this.selectItem(clickedItem)
         } else {
@@ -96,6 +93,27 @@ export default class {
     })
 
     this.render()
+  }
+
+  getClickedItem = (p: any) => {
+    const pos = screenToTile(p)
+    return this.items
+      ?.filter((i) => i.alpha)
+      ?.find((o) => {
+        const itemTiles = this.getItemTiles(o)
+        return itemTiles.some((it) => it.x === pos.x && it.y === pos.y)
+      })
+  }
+
+  getItemTiles = (item: Item) => {
+    const _pos = item.tilePosition ?? screenToTile({ x: item.x, y: item.y })
+    const stats = ITEMS[item.itemType as keyof typeof ITEMS]
+    return this.map.getTilesWithin(
+      _pos.x,
+      _pos.y,
+      stats?.width ?? 1,
+      stats?.height ?? 1,
+    )
   }
 
   removeItem = (key: string) => {
@@ -134,7 +152,8 @@ export default class {
       }
     }
     if (x && y) {
-      this.placeTile(x, y, 1)
+      const stats = ITEMS[itemType as keyof typeof ITEMS]
+      this.map.fill(1, x, y, stats.width ?? 1, stats.height ?? 1)
       this.scene.data.set(`inventory-${this.inventoryKey}`, {
         ...inv,
         items: [...inv.items, { key, type: itemType, x, y }],
@@ -147,7 +166,17 @@ export default class {
     // if the selected item isnt in the inventory, we should add it instead of moving it.
     // we can tell because for items in the inventory, we will set an item key
     if (this.selectedItem.itemKey) {
-      this.moveItem(this.selectedItem, screenToTile({ x, y }))
+      let pos = screenToTile({ x, y })
+      const offsetX = Math.floor(
+        (this.selectedItem.clickOffset?.x ?? 0) / TILE_SIZE,
+      )
+      const offsetY = Math.floor(
+        (this.selectedItem.clickOffset?.y ?? 0) / TILE_SIZE,
+      )
+      this.moveItem(this.selectedItem, {
+        x: pos.x - offsetX,
+        y: pos.y - offsetY,
+      })
     } else {
       const pos = screenToTile({ x, y })
       this.addItem('slime', pos.x, pos.y)
@@ -181,11 +210,31 @@ export default class {
     item: Item,
     newPos: { x: number; y: number; key?: string; type?: string },
   ) {
-    const isTileOccupied = this.getTile(newPos.x, newPos.y)?.index !== 0
     const existingItem = this.items?.find((i) => {
       const pos = screenToTile(i)
-      return i !== item && pos.x === newPos.x && pos.y === newPos.y
+      return (
+        i.itemKey !== item.itemKey && pos.x === newPos.x && pos.y === newPos.y
+      )
     })
+    const stats = ITEMS[(newPos.type ?? item.itemType) as keyof typeof ITEMS]
+    const isTileOccupied = !!existingItem
+
+    const itemTiles = this.getItemTiles(item)
+    const tiles = this.map.getTilesWithin(
+      newPos.x,
+      newPos.y,
+      stats?.width ?? 1,
+      stats?.height ?? 1,
+    )
+
+    const canFit = tiles.every((t) => {
+      const isEmpty = this.getTile(t.x, t.y)?.index === 0
+      const isPartOfIncomingItem = itemTiles.some(
+        (it) => it.x === t.x && it.y === t.y,
+      )
+      return isEmpty || isPartOfIncomingItem
+    })
+
     if (!item) return
 
     if (isTileOccupied) {
@@ -201,9 +250,14 @@ export default class {
         this.addItem(validRecipe[0], pos.x, pos.y)
         this.render()
       }
+    }
+
+    if (isTileOccupied || !canFit) {
       item.putBack()
+
       return
     }
+
     item.deselect()
 
     if (item.lastPosition) {
@@ -213,14 +267,13 @@ export default class {
 
     item.spawn(newPos.x, newPos.y, newPos.type, newPos.key)
 
-    this.placeTile(newPos.x, newPos.y, 1)
-    const inventory = this.getInventory()
-    const index = +item.dataKey.split('-')[1]
+    this.map.fill(1, newPos.x, newPos.y, stats.width ?? 1, stats.height ?? 1)
 
+    const inventory = this.getInventory()
     this.scene.data.set(`inventory-${this.inventoryKey}`, {
       ...inventory,
-      items: inventory.items.map((_item: IItem, i: number) =>
-        index !== i ? _item : { ..._item, ...newPos },
+      items: inventory.items.map((_item: IItem) =>
+        item.itemKey !== _item.key ? _item : { ..._item, ...newPos },
       ),
     })
   }
@@ -240,7 +293,7 @@ export default class {
       ]
       if (inventory.availableCellCount > 0)
         neighbours.forEach((t) => {
-          if (t.index !== 0) this.placeTile(t.x, t.y, 3)
+          if (t && t.index !== 0) this.placeTile(t.x, t.y, 3)
         })
     })
 

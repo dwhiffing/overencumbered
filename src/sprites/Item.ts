@@ -1,4 +1,4 @@
-import { ITEMS, OFFSET_X, OFFSET_Y, TILE_SIZE } from '../utils'
+import { ITEMS, OFFSET_X, OFFSET_Y, screenToTile, TILE_SIZE } from '../utils'
 
 export class Item extends Phaser.GameObjects.Sprite {
   dataKey: string
@@ -7,6 +7,7 @@ export class Item extends Phaser.GameObjects.Sprite {
   isSelected?: boolean
   clickOffset?: { x: number; y: number }
   lastPosition?: { x: number; y: number }
+  tilePosition?: { x: number; y: number }
   constructor(scene: Phaser.Scene, dataKey: string, x: number, y: number) {
     super(scene, x, y, 'objects', 0)
     this.dataKey = dataKey
@@ -23,15 +24,22 @@ export class Item extends Phaser.GameObjects.Sprite {
   spawn(x: number, y: number, itemType?: string, itemKey?: string) {
     // TODO: width/height
     const stats = ITEMS[itemType as keyof typeof ITEMS]
-    if (stats) this.setTintFill(stats.color)
+    if (stats) {
+      this.setTintFill(stats.color)
+      if (stats.width) {
+        this.setScale(stats.width ?? 1, stats.height ?? 1)
+      }
+    }
     if (itemType) this.itemType = itemType
     if (itemKey) this.itemKey = itemKey
     this.setAlpha(1)
     this.moveToTilePosition(x, y)
+    this.lastPosition = { x: this.x, y: this.y }
+    this.tilePosition = screenToTile({ x: this.x, y: this.y })
   }
 
   select() {
-    this.lastPosition = { x: this.x + 1, y: this.y + 1 }
+    this.lastPosition = { x: this.x, y: this.y }
   }
 
   deselect() {}

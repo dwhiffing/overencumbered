@@ -34,6 +34,21 @@ export const RECIPES = {
 }
 
 export const ITEMS = {
+  armor: {
+    width: 2,
+    height: 3,
+    color: 0xffffff,
+  },
+  helmet: {
+    width: 2,
+    height: 2,
+    color: 0xffffff,
+  },
+  sword: {
+    width: 1,
+    height: 4,
+    color: 0xffffff,
+  },
   flask: {
     width: 1,
     height: 1,
@@ -79,10 +94,9 @@ export const STATS = {
 }
 
 export const screenToTile = (v?: { x: number; y: number }) => {
-  return {
-    y: Math.floor(((v?.y ?? 0) - OFFSET_Y) / TILE_SIZE),
-    x: Math.floor(((v?.x ?? 0) - OFFSET_X) / TILE_SIZE),
-  }
+  const x = Math.floor(((v?.x ?? 0) - OFFSET_X) / TILE_SIZE)
+  const y = Math.floor(((v?.y ?? 0) - OFFSET_Y) / TILE_SIZE)
+  return { x, y }
 }
 
 export const INITIAL_CELLS = [
@@ -106,6 +120,7 @@ export const INITIAL_CELLS = [
 
 export const INITIAL_INV = {
   openCells: INITIAL_CELLS,
-  availableCellCount: 3,
+  availableCellCount: 30,
+  // availableCellCount: 0,
   items: [],
 }
