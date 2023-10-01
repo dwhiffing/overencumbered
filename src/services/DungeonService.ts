@@ -47,39 +47,27 @@ export default class {
 
     this.roomIndex = 0
     this.levelKey = 'dungeon'
-
-    this.nextRoom()
-
-    this.scene.time.addEvent({
-      repeat: -1,
-      delay: 500,
-      callback: () => this.checkEnemies(),
-    })
   }
 
   unlockArcher = () => {
-    this.scene.time.delayedCall(500, () => {
-      this.players[1]?.spawn('archer')
-      this.uis[1].show()
-      this.uis[0].deselect()
-      this.uis[1].deselect()
-      this.uis[2].deselect()
-      this.uis[0].setupListeners('player-1')
-      this.uis[1].setupListeners('player-0')
-    })
+    this.players[1]?.spawn('archer')
+    this.uis[1].show()
+    this.uis[0].deselect()
+    this.uis[1].deselect()
+    this.uis[2].deselect()
+    this.uis[0].setupListeners('player-1')
+    this.uis[1].setupListeners('player-0')
   }
 
   unlockMage = () => {
-    this.scene.time.delayedCall(500, () => {
-      this.players[2]?.spawn('mage')
-      this.uis[2].show()
-      this.uis[0].deselect()
-      this.uis[1].deselect()
-      this.uis[2].deselect()
-      this.uis[0].setupListeners('player-2')
-      this.uis[1].setupListeners('player-1')
-      this.uis[2].setupListeners('player-0')
-    })
+    this.players[2]?.spawn('mage')
+    this.uis[2].show()
+    this.uis[0].deselect()
+    this.uis[1].deselect()
+    this.uis[2].deselect()
+    this.uis[0].setupListeners('player-2')
+    this.uis[1].setupListeners('player-1')
+    this.uis[2].setupListeners('player-0')
   }
 
   nextDungeon = () => {
@@ -92,6 +80,8 @@ export default class {
     } else if (this.levelKey === 'desert') {
       this.unlockMage()
       this.levelKey = 'jungle'
+    } else {
+      this.scene.victory()
     }
 
     this.nextRoom()
@@ -103,6 +93,7 @@ export default class {
     if (!level || !room) return this.nextDungeon()
     this.spawnEnemies(room)
   }
+
   checkEnemies = () => {
     if (
       this.enemies.every((e) => {
@@ -110,6 +101,13 @@ export default class {
       })
     ) {
       this.nextRoom()
+    }
+    if (
+      this.players.every((e) => {
+        return e.getGameData()?.health <= 0
+      })
+    ) {
+      this.scene.gameover()
     }
   }
 

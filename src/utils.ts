@@ -1,3 +1,4 @@
+export const DEBUG = false
 export const OFFSET_Y = 290
 export const OFFSET_X = 10
 export const TILE_SIZE = 40
