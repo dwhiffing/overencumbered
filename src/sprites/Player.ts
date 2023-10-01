@@ -1,5 +1,5 @@
 import Game from '../scenes/Game'
-import { SPEED, STATS, ATTACK_SPEED } from '../utils'
+import { SPEED, STATS, ATTACK_SPEED, IPlayer, IItem } from '../utils'
 import { Bar } from './Bar'
 
 export class Player extends Phaser.GameObjects.Sprite {
@@ -15,7 +15,7 @@ export class Player extends Phaser.GameObjects.Sprite {
 
     this.scene.data.events.on(
       `changedata-player-${this.dataKey}`,
-      (_: any, value: any) => {
+      (_: any, value: IPlayer) => {
         this.healthBar?.update(value.health)
         this.fatigueBar?.update(value.fatigue)
       },
@@ -25,6 +25,7 @@ export class Player extends Phaser.GameObjects.Sprite {
     this.healthBar = new Bar(this.scene, this.x - 16, this.y - 32, 32, 4, 'red')
     this.healthBar.hide()
     this.setGameData('health', 0)
+    this.setGameData('maxHealth', 0)
     this.setGameData('fatigue', 0)
     this.setGameData('damage', 0)
     this.setGameData('color', 0x000000)
@@ -51,14 +52,44 @@ export class Player extends Phaser.GameObjects.Sprite {
   tick() {
     if (this.alpha === 0) return
     if (this.getGameData().fatigue >= this.getGameData().maxFatigue) {
-      this.setGameData('fatigue', this.getGameData().maxFatigue)
-      const target = this.getTarget()
-      if (target) {
-        this.setGameData('fatigue', 0)
-        this.attack(target)
-      }
+      this.takeAction()
     } else {
       this.setGameData('fatigue', this.getGameData().fatigue + 1)
+    }
+  }
+
+  getItem = (itemType: string) => {
+    const inventory = this.scene.data.get(`inventory-${this.dataKey}`) as {
+      items: IItem[]
+    }
+
+    return inventory?.items?.find((i: IItem) => i.type === itemType)
+  }
+
+  usePotion = (potion: IItem) => {
+    console.log('potion', potion)
+    this.scene.inventoryService?.removeItem(potion.key)
+    this.scene.inventoryService?.render()
+    this.setGameData('health', this.getGameData().maxHealth)
+  }
+
+  takeAction = () => {
+    this.setGameData('fatigue', this.getGameData().maxFatigue)
+
+    const healthThreshold = this.getGameData().maxHealth / 2
+    const potion = this.getItem('potion')
+    if (this.getGameData().health <= healthThreshold && potion) {
+      this.usePotion(potion)
+    } else {
+      this.attackIfValidTarget()
+    }
+  }
+
+  attackIfValidTarget = () => {
+    const target = this.getTarget()
+    if (target) {
+      this.setGameData('fatigue', 0)
+      this.attack(target)
     }
   }
 
@@ -79,6 +110,7 @@ export class Player extends Phaser.GameObjects.Sprite {
     let { health, fatigue, damage, color } = STATS[type as keyof typeof STATS]
     this.setTintFill(color)
     this.setGameData('health', health)
+    this.setGameData('maxHealth', health)
     this.setGameData('fatigue', 0)
     this.setGameData('damage', damage)
     this.setGameData('color', color)
@@ -103,9 +135,9 @@ export class Player extends Phaser.GameObjects.Sprite {
     })
   }
 
-  getGameData = () => this.scene.data.get(`player-${this.dataKey}`)
+  getGameData = () => this.scene.data.get(`player-${this.dataKey}`) as IPlayer
 
-  setGameData = (k: string, v: any) =>
+  setGameData = (k: keyof IPlayer, v: number | string) =>
     this.scene.data.set(`player-${this.dataKey}`, {
       ...this.getGameData(),
       [k]: v,
@@ -129,8 +161,9 @@ export class Player extends Phaser.GameObjects.Sprite {
     this.setAlpha(0)
     const isEnemy = !!this.dataKey.match(/enemy/)
     if (isEnemy) {
-      if (Phaser.Math.RND.between(0, 1) === 0)
-        this.scene.inventoryService?.dropLoot(this.x - 16, this.y - 32)
+      //  TODO: Loot
+      // if (Phaser.Math.RND.between(0, 1) === 0)
+      //   this.scene.inventoryService?.dropLoot(this.x - 16, this.y - 32)
     }
   }
 }

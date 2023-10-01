@@ -1,5 +1,12 @@
 import Game from '../scenes/Game'
-import { OFFSET_X, OFFSET_Y, RECIPES, screenToTile, TILE_SIZE } from '../utils'
+import {
+  IItem,
+  OFFSET_X,
+  OFFSET_Y,
+  RECIPES,
+  screenToTile,
+  TILE_SIZE,
+} from '../utils'
 import { Item } from '../sprites/Item'
 
 // list of items in inventory
@@ -92,24 +99,17 @@ export default class {
   }
 
   removeItem = (key: string) => {
-    const inv = this.scene.data.get(`inventory-${this.inventoryKey}`) ?? []
+    const inv = this.getInventory()
     this.scene.data.set(`inventory-${this.inventoryKey}`, {
-      items: inv.items.filter((item: any) => item.key !== key),
+      items: inv.items.filter((item: IItem) => item.key !== key),
     })
   }
 
   addItem = (itemType: string, x: number, y: number) => {
-    const thing = this.scene.data.get(`inventory-${this.inventoryKey}`) ?? []
+    const inv = this.getInventory()
+    const key = `item-${Phaser.Math.RND.uuid()}`
     this.scene.data.set(`inventory-${this.inventoryKey}`, {
-      items: [
-        ...thing.items,
-        {
-          key: `item-${Phaser.Math.RND.uuid()}`,
-          type: itemType,
-          x,
-          y,
-        },
-      ],
+      items: [...inv.items, { key, type: itemType, x, y }],
     })
   }
 
@@ -127,7 +127,14 @@ export default class {
     this.selectedItem = undefined
   }
 
-  setInventory(key: string) {
+  getInventory() {
+    const inv = this.scene.data.get(`inventory-${this.inventoryKey}`) ?? {
+      items: [],
+    }
+    return { ...inv, items: inv.items as IItem[] }
+  }
+
+  setActiveInventoryKey(key: string) {
     this.inventoryKey = key
     this.render()
   }
@@ -176,11 +183,11 @@ export default class {
     item.spawn(newPos.x, newPos.y, newPos.type, newPos.key)
 
     this.placeTile(newPos.x, newPos.y, 1)
-    const inventory = this.scene.data.get(`inventory-${this.inventoryKey}`)
+    const inventory = this.getInventory()
     const index = +item.dataKey.split('-')[1]
 
     this.scene.data.set(`inventory-${this.inventoryKey}`, {
-      items: inventory.items.map((_item: any, i: number) =>
+      items: inventory.items.map((_item: IItem, i: number) =>
         index !== i ? _item : { ..._item, ...newPos },
       ),
     })
@@ -188,11 +195,11 @@ export default class {
 
   render() {
     if (!this.items) return
-    const inventory = this.scene.data.get(`inventory-${this.inventoryKey}`)
+    const inventory = this.getInventory()
     this.items?.forEach((o) => o.reset())
     this.map.fill(0)
 
-    inventory.items.forEach((o: any, i: number) => {
+    inventory.items.forEach((o: IItem, i: number) => {
       if (this.items?.[i]) this.moveItem(this.items[i], o)
     })
   }

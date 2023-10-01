@@ -1,6 +1,12 @@
 import Game from '../scenes/Game'
 import { Bar } from './Bar'
-import { PLAYER_UI_WIDTH, PORTRAIT_SIZE, BAR_WIDTH, BAR_HEIGHT } from '../utils'
+import {
+  PLAYER_UI_WIDTH,
+  PORTRAIT_SIZE,
+  BAR_WIDTH,
+  BAR_HEIGHT,
+  IPlayer,
+} from '../utils'
 
 export class PlayerUI {
   scene: Game
@@ -15,7 +21,7 @@ export class PlayerUI {
       .on('pointerdown', () => {
         this.scene.dungeonService?.uis.forEach((ui) => ui.deselect())
         this.select()
-        this.scene.inventoryService?.setInventory(key)
+        this.scene.inventoryService?.setActiveInventoryKey(key)
       })
 
     this.scene.add
@@ -69,10 +75,13 @@ export class PlayerUI {
     fatigueBar.setMax(d?.maxFatigue ?? 0)
     healthBar.update(d?.health ?? 0)
 
-    this.scene.data.events.on(`changedata-player-${key}`, (a: any, c: any) => {
-      healthBar.update(c.health)
-      fatigueBar.update(c.fatigue)
-    })
+    this.scene.data.events.on(
+      `changedata-player-${key}`,
+      (a: any, c: IPlayer) => {
+        healthBar.update(c.health)
+        fatigueBar.update(c.fatigue)
+      },
+    )
   }
 
   update() {}
