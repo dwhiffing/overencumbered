@@ -195,12 +195,27 @@ export class Player extends Phaser.GameObjects.Sprite {
     this.fatigueBar?.hide()
     this.setAlpha(0)
 
+    const counters = this.scene.data.values['loot-counters']
+    const killCount = counters?.[this.playerType!] ?? 0
+    this.scene.data.values['loot-counters'] = {
+      ...counters,
+      [this.playerType!]: killCount + 1,
+    }
+
     damager.getExperience(this.getGameData().level)
     const isEnemy = !!this.dataKey.match(/enemy/)
     if (isEnemy) {
-      let { drops } = STATS[this.playerType as keyof typeof STATS]
-      // if (Phaser.Math.RND.between(0, 1) === 0)
-      this.scene.inventoryService?.dropLoot(this.x - 16, this.y - 60, drops)
+      if (Phaser.Math.RND.between(0, 1) === 0) {
+        this.scene.data.values['loot-counters'] = {
+          ...counters,
+          [this.playerType!]: killCount + 1,
+        }
+        this.scene.inventoryService?.dropLoot(
+          this.x - 16,
+          this.y - 60,
+          this.playerType!,
+        )
+      }
     }
   }
 }

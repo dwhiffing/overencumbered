@@ -9,6 +9,7 @@ import {
   OFFSET_Y,
   RECIPES,
   screenToTile,
+  STATS,
   TILE_SIZE,
   TOOLTIP_HEIGHT,
   TOOLTIP_WIDTH,
@@ -58,6 +59,7 @@ export default class {
       .createLayer(0, this.map.addTilesetImage('tiles'), OFFSET_X, OFFSET_Y)
       .setScale(1)
 
+    this.scene.data.set(`loot-counters`, {})
     this.scene.data.set(`ground-items`, [])
     this.scene.data.set(`inventory-player-0`, INITIAL_INV)
     this.scene.data.set(`inventory-player-1`, INITIAL_INV)
@@ -300,10 +302,13 @@ export default class {
     this.renderInventory()
   }
 
-  dropLoot(x: number, y: number, options: string[]) {
-    const type = Phaser.Math.RND.pick(options)
+  dropLoot(x: number, y: number, type: string) {
+    let stats = STATS[type as keyof typeof STATS]
+    const itemIndex =
+      (this.scene.data.values['loot-counters'][type] - 1) % stats.drops.length
+    const itemType = stats?.drops[itemIndex]
     this.scene.data.values['ground-items'].push({
-      type,
+      type: itemType,
       key: Phaser.Math.RND.uuid(),
       // x: (++n % 20) * 20,
       // y: Math.floor(n / 20) * 20,
