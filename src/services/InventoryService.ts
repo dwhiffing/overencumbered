@@ -1,5 +1,6 @@
 import Game from '../scenes/Game'
 import {
+  IInventory,
   IItem,
   INITIAL_CELLS,
   INITIAL_INV,
@@ -69,15 +70,21 @@ export default class {
       if (this.selectedItem) {
         this.moveSelectedItem(p.x, p.y)
       } else {
-        this.selectItem(
-          this.items
-            ?.filter((i) => i.alpha)
-            ?.find((o) => {
-              const pos = screenToTile(p)
-              const _pos = screenToTile(o)
-              return _pos.x === pos.x && _pos.y === pos.y
-            })!,
-        )
+        const clickedItem = this.items
+          ?.filter((i) => i.alpha)
+          ?.find((o) => {
+            const pos = screenToTile(p)
+            const _pos = screenToTile(o)
+            return _pos.x === pos.x && _pos.y === pos.y
+          })
+        if (clickedItem) {
+          this.selectItem(clickedItem)
+        } else {
+          const pos = screenToTile(p)
+          if (this.getTile(pos.x, pos.y)?.index === 3) {
+            this.unlockTile(pos.x, pos.y)
+          }
+        }
       }
     })
 
@@ -97,6 +104,16 @@ export default class {
       ...inv,
       items: inv.items.filter((item: IItem) => item.key !== key),
     })
+  }
+
+  unlockTile = (x: number, y: number) => {
+    const inv = this.getInventory()
+    this.scene.data.set(`inventory-${this.inventoryKey}`, {
+      ...inv,
+      openCells: [...inv.openCells, [x, y]],
+      availableCellCount: inv.availableCellCount - 1,
+    })
+    this.render()
   }
 
   getOpenSlot = () => {
@@ -143,7 +160,7 @@ export default class {
     const inv = this.scene.data.get(`inventory-${this.inventoryKey}`) ?? {
       items: [],
     }
-    return { ...inv, items: inv.items as IItem[] }
+    return { ...inv, items: inv.items } as IInventory
   }
 
   setActiveInventoryKey(key: string) {
@@ -213,7 +230,19 @@ export default class {
     const inventory = this.getInventory()
     this.items?.forEach((o) => o.reset())
     this.map.fill(2)
-    inventory.openCells.forEach(([x, y]: number[]) => this.placeTile(x, y, 0))
+    inventory.openCells.forEach(([x, y]: number[]) => {
+      this.placeTile(x, y, 0)
+      const neighbours = [
+        this.getTile(x - 1, y),
+        this.getTile(x + 1, y),
+        this.getTile(x, y - 1),
+        this.getTile(x, y + 1),
+      ]
+      if (inventory.availableCellCount > 0)
+        neighbours.forEach((t) => {
+          if (t.index !== 0) this.placeTile(t.x, t.y, 3)
+        })
+    })
 
     inventory.items.forEach((o: IItem, i: number) => {
       if (this.items?.[i]) this.moveItem(this.items[i], o)

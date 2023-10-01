@@ -17,6 +17,12 @@ export interface IPlayer {
   maxFatigue: number
 }
 
+export interface IInventory {
+  items: IItem[]
+  openCells: number[][]
+  availableCellCount: number
+}
+
 export interface IItem {
   key: string
   type: string
@@ -100,5 +106,6 @@ export const INITIAL_CELLS = [
 
 export const INITIAL_INV = {
   openCells: INITIAL_CELLS,
+  availableCellCount: 3,
   items: [],
 }
