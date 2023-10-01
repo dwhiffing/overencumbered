@@ -300,8 +300,8 @@ export default class {
     this.render()
   }
 
-  dropLoot(x: number, y: number) {
-    const type = Phaser.Math.RND.weightedPick(['slime', 'flask'])
+  dropLoot(x: number, y: number, options: string[]) {
+    const type = Phaser.Math.RND.pick(options)
     this.scene.data.values['ground-items'].push({
       type,
       key: Phaser.Math.RND.uuid(),

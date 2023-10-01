@@ -32,8 +32,28 @@ export interface IItem {
   y: number
   timer?: number
 }
+export const LEVELS = {
+  dungeon: {
+    rooms: [
+      ['red_slime', 'red_slime', 'red_slime'],
+      ['red_slime', 'red_slime', 'red_slime'],
+      ['red_slime', 'red_slime', 'red_slime'],
+      ['red_slime', 'red_slime', 'red_slime'],
+      ['red_slime', 'red_slime', 'red_slime'],
+    ],
+  },
+  desert: {
+    rooms: [
+      ['blue_slime', 'blue_slime', 'blue_slime'],
+      ['red_slime', 'red_slime', 'red_slime'],
+      ['red_slime', 'red_slime', 'red_slime'],
+      ['red_slime', 'red_slime', 'red_slime'],
+      ['red_slime', 'red_slime', 'red_slime'],
+    ],
+  },
+}
 export const RECIPES = {
-  potion: ['flask', 'slime'],
+  health_potion: ['flask', 'red_slime'],
 }
 
 export const ITEMS = {
@@ -66,12 +86,22 @@ export const ITEMS = {
     height: 1,
     color: 0xffffff,
   },
-  slime: {
+  red_slime: {
     width: 1,
     height: 1,
     color: 0xff5555,
   },
-  potion: {
+  green_slime: {
+    width: 1,
+    height: 1,
+    color: 0x55ff55,
+  },
+  blue_slime: {
+    width: 1,
+    height: 1,
+    color: 0x5555ff,
+  },
+  health_potion: {
     width: 1,
     height: 1,
     color: 0xff0000,
@@ -80,18 +110,20 @@ export const ITEMS = {
 
 export const STATS = {
   archer: {
-    damage: 1,
+    damage: 5,
     health: 20,
     armor: 0,
     fatigue: 10,
     color: 0x55ff55,
+    drops: [],
   },
   mage: {
-    damage: 1,
+    damage: 5,
     health: 20,
     armor: 0,
     fatigue: 50,
     color: 0x5555ff,
+    drops: [],
   },
   knight: {
     damage: 2,
@@ -99,13 +131,31 @@ export const STATS = {
     armor: 0,
     fatigue: 20,
     color: 0xff5555,
+    drops: [],
   },
-  slime: {
+  red_slime: {
+    armor: 0,
+    damage: 3,
+    health: 5,
+    fatigue: 30,
+    color: 0xff5555,
+    drops: ['red_slime', 'flask'],
+  },
+  blue_slime: {
     armor: 0,
     damage: 3,
     health: 20,
     fatigue: 30,
-    color: 0xff5555,
+    color: 0x5555ff,
+    drops: ['blue_slime', 'flask'],
+  },
+  green_slime: {
+    armor: 0,
+    damage: 3,
+    health: 20,
+    fatigue: 30,
+    color: 0x55ff55,
+    drops: ['green_slime', 'flask'],
   },
 }
 

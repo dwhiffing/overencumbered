@@ -77,7 +77,7 @@ export class Player extends Phaser.GameObjects.Sprite {
     this.setGameData('fatigue', this.getGameData().maxFatigue)
 
     const healthThreshold = this.getGameData().maxHealth / 2
-    const potion = this.getItem('potion')
+    const potion = this.getItem('health_potion')
     if (this.getGameData().health <= healthThreshold && potion) {
       this.usePotion(potion)
     } else {
@@ -101,8 +101,6 @@ export class Player extends Phaser.GameObjects.Sprite {
         : this.scene.dungeonService!.enemies
     ).filter((f) => f.alpha)
 
-    // if (!isEnemy && targets.length === 0)
-    //   this.scene.dungeonService!.enemies.forEach((p) => p.spawn('slime'))
     return targets[0]!
   }
 
@@ -114,10 +112,8 @@ export class Player extends Phaser.GameObjects.Sprite {
     this.setGameData('health', health)
     this.setGameData('fatigue', 0)
     this.setGameData('color', color)
-    if (type === 'slime') {
-      this.healthBar.setMax(health)
-      this.fatigueBar.setMax(fatigue)
-    }
+    this.healthBar.setMax(health)
+    this.fatigueBar.setMax(fatigue)
 
     this.setAlpha(1)
   }
@@ -177,8 +173,9 @@ export class Player extends Phaser.GameObjects.Sprite {
     this.setAlpha(0)
     const isEnemy = !!this.dataKey.match(/enemy/)
     if (isEnemy) {
+      let { drops } = STATS[this.playerType as keyof typeof STATS]
       if (Phaser.Math.RND.between(0, 1) === 0)
-        this.scene.inventoryService?.dropLoot(this.x - 16, this.y - 32)
+        this.scene.inventoryService?.dropLoot(this.x - 16, this.y - 60, drops)
     }
   }
 }

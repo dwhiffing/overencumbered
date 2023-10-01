@@ -1,13 +1,15 @@
 import Game from '../scenes/Game'
 import { Player } from '../sprites/Player'
 import { PlayerUI } from '../sprites/PlayerUI'
-import { PLAYER_UI_WIDTH } from '../utils'
+import { LEVELS, PLAYER_UI_WIDTH } from '../utils'
 
 export default class {
   scene: Game
   players: Player[]
   uis: PlayerUI[]
   enemies: Player[]
+  roomIndex: number
+  levelKey: string
   constructor(scene: Game) {
     this.scene = scene
 
@@ -44,7 +46,11 @@ export default class {
 
     this.enemies.forEach((p) => this.scene.add.existing(p))
 
-    this.spawnEnemies(3)
+    this.roomIndex = 0
+    this.levelKey = 'dungeon'
+
+    this.nextRoom()
+
     this.scene.time.addEvent({
       repeat: -1,
       delay: 500,
@@ -52,17 +58,31 @@ export default class {
     })
   }
 
+  nextDungeon = () => {
+    this.roomIndex = 0
+    // TODO: 
+    this.levelKey = 'desert'
+
+    this.nextRoom()
+  }
+
+  nextRoom = () => {
+    const level = LEVELS[this.levelKey as keyof typeof LEVELS]
+    const room = level.rooms[this.roomIndex++]
+    if (!level || !room) return this.nextDungeon()
+    this.spawnEnemies(room)
+  }
   checkEnemies = () => {
     if (
       this.enemies.every((e) => {
         return e.getGameData()?.health <= 0
       })
     ) {
-      this.spawnEnemies(3)
+      this.nextRoom()
     }
   }
 
-  spawnEnemies = (count: number) => {
-    this.enemies.slice(5 - count).forEach((e) => e.spawn('slime'))
+  spawnEnemies = (keys: string[]) => {
+    this.enemies.slice(5 - keys.length).forEach((e, i) => e.spawn(keys[i]))
   }
 }
