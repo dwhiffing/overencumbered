@@ -21,6 +21,7 @@ import { Item } from '../sprites/Item'
 // used to determine what slots are open on the inventory
 // used to determine what itemject sprites are displayed and where
 
+let n = -1
 export default class {
   scene: Game
   map: Phaser.Tilemaps.Tilemap
@@ -28,6 +29,7 @@ export default class {
   selectedItem?: Item
   inventoryKey?: string
   items?: Item[]
+  groundItems?: Item[]
   constructor(scene: Game) {
     this.scene = scene
     const data = []
@@ -62,10 +64,6 @@ export default class {
     this.scene.data.set(`inventory-player-2`, INITIAL_INV)
     this.addItem('sword')
     this.addItem('helmet')
-    this.addItem('flask')
-    this.addItem('flask')
-    this.addItem('slime')
-    this.addItem('slime')
 
     this.tooltip = this.scene.add
       .container(100, 100, [
@@ -81,7 +79,13 @@ export default class {
       .setDepth(10)
       .setAlpha(0)
 
-    this.items = new Array(30).fill('').map((_, i) => {
+    this.groundItems = new Array(50).fill('').map((_, i) => {
+      const item = new Item(this.scene, `item-${i}`, 0, 0)
+      this.scene.add.existing(item)
+      return item
+    })
+
+    this.items = new Array(50).fill('').map((_, i) => {
       const item = new Item(this.scene, `item-${i}`, 0, 0)
       this.scene.add.existing(item)
       return item
@@ -116,13 +120,7 @@ export default class {
       }
     })
 
-    this.scene.time.addEvent({
-      repeat: -1,
-      callback: this.render,
-      delay: 200,
-    })
-
-    this.render()
+    this.renderInventory()
   }
 
   moveToolTip = (x: number, y: number, text?: string) => {
@@ -153,7 +151,7 @@ export default class {
 
   getClickedItem = (p: any) => {
     const pos = screenToTile(p)
-    return this.items
+    return [...this.items!, ...this.groundItems!]
       ?.filter((i) => i.alpha)
       ?.find((o) => {
         const itemTiles = this.getItemTiles(o)
@@ -201,7 +199,7 @@ export default class {
       openCells: [...inv.openCells, [x, y]],
       availableCellCount: inv.availableCellCount - 1,
     })
-    this.render()
+    this.renderInventory()
   }
 
   isSlotOpen = (x: number, y: number, width: number, height: number) => {
@@ -279,11 +277,12 @@ export default class {
       }
     }
     this.deselect()
+    this.renderGround()
+    this.renderInventory()
   }
 
   deselect = () => {
     this.selectedItem = undefined
-    this.render()
   }
 
   getInventory(key?: string) {
@@ -297,7 +296,7 @@ export default class {
 
   setActiveInventoryKey(key: string) {
     this.inventoryKey = key
-    this.render()
+    this.renderInventory()
   }
 
   dropLoot(x: number, y: number, options: string[]) {
@@ -305,11 +304,14 @@ export default class {
     this.scene.data.values['ground-items'].push({
       type,
       key: Phaser.Math.RND.uuid(),
+      // x: (++n % 20) * 20,
+      // y: Math.floor(n / 20) * 20,
       x: x + Phaser.Math.RND.between(-20, 20),
-      y: y + Phaser.Math.RND.between(-20, 20),
+      y: y,
       timer: this.scene.time.now + ITEM_TIMEOUT_DURATION,
     })
-    this.render()
+
+    this.renderGround()
   }
 
   moveItem(
@@ -358,8 +360,9 @@ export default class {
         if (item.itemKey) this.removeItem(item.itemKey)
         if (existingItem?.itemKey) this.removeItem(existingItem.itemKey)
         const pos = screenToTile(existingItem)
+        this.renderInventory()
         this.addItem(validRecipe[0], pos.x, pos.y)
-        this.render()
+        this.renderInventory()
       }
     }
 
@@ -390,13 +393,10 @@ export default class {
     })
   }
 
-  render = () => {
+  renderInventory = () => {
     if (!this.items) return
     const inventory = this.getInventory()
-    const items = this.items?.filter(
-      (i) => !i.itemKey || i.itemKey !== this.selectedItem?.itemKey,
-    )
-    items.forEach((o) => o.reset())
+    this.items.forEach((o) => o.reset())
     this.map.fill(2)
     inventory.openCells.forEach(([x, y]: number[]) => {
       this.placeTile(x, y, 0)
@@ -411,33 +411,35 @@ export default class {
           if (t && t.index !== 0) this.placeTile(t.x, t.y, 3)
         })
     })
-    inventory.items
-      ?.filter((i) => !i.key || i.key !== this.selectedItem?.itemKey)
-      .forEach((o: IItem, i: number) => {
-        const item = items.find((i) => i.lastItemKey === o.key) ?? items[i]
-        if (item) this.moveItem(item, o)
-      })
+    inventory.items.forEach((o: IItem, i: number) => {
+      const item =
+        this.items!.find((i) => i.lastItemKey === o.key) ?? this.items![i]
+      if (item) this.moveItem(item, o)
+    })
+  }
+
+  renderGround = () => {
+    if (!this.groundItems) return
+    const items = this.groundItems.filter((i) => i !== this.selectedItem)
+    items.forEach((o) => o.reset())
 
     const groundItems = this.scene.data.get('ground-items') as IItem[]
-    groundItems
-      ?.filter((i) => !i.key || i.key !== this.selectedItem?.itemKey)
-      .forEach((o: IItem, i: number) => {
-        let j = i + inventory.items.length
-        const item = items.find((i) => i.lastItemKey === o.key) ?? items[j]
-        if (!item) return
-        item.spawn(o.type, o.key)
-        item.setPosition(o.x, o.y)
-        if (o.timer) {
-          const remainingMS =
-            (o.timer ?? this.scene.time.now) - this.scene.time.now
-          item.alpha = remainingMS / ITEM_TIMEOUT_DURATION
-          item.timer = o.timer
-        }
-        if ((o.timer ?? this.scene.time.now) - this.scene.time.now < 0) {
-          this.removeGroundItem(o.key)
-        }
-        if (item !== this.selectedItem) item.float()
-      })
+    const sorted = groundItems.sort((a, b) => {
+      const aHas = items!.find((i) => i.lastItemKey === a.key)
+      const bHas = items!.find((i) => i.lastItemKey === b.key)
+      if ((aHas && bHas) || (!aHas && !bHas)) return 0
+      if (aHas) return 1
+      return -1
+    })
+    sorted.forEach((o: IItem, i: number) => {
+      const item =
+        items!.find((i) => i.lastItemKey === o.key) ??
+        items!.find((i) => !i.lastItemKey)
+      if (!item) return
+      item.spawn(o.type, o.key)
+      item.setPosition(o.x, o.y)
+      // item.float()
+    })
   }
 
   selectItem = (item?: Item) => {
@@ -502,5 +504,10 @@ export default class {
   placeTile = (x: number, y: number, index: number) => {
     this.map.putTileAt(index, x, y)
     return true
+  }
+
+  update() {
+    this.items?.forEach((i) => i.update())
+    this.groundItems?.forEach((i) => i.update())
   }
 }

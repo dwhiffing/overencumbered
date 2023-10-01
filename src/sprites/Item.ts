@@ -1,5 +1,13 @@
 import Game from '../scenes/Game'
-import { ITEMS, OFFSET_X, OFFSET_Y, screenToTile, TILE_SIZE } from '../utils'
+import {
+  IItem,
+  ITEMS,
+  ITEM_TIMEOUT_DURATION,
+  OFFSET_X,
+  OFFSET_Y,
+  screenToTile,
+  TILE_SIZE,
+} from '../utils'
 
 export class Item extends Phaser.GameObjects.Sprite {
   dataKey: string
@@ -66,7 +74,10 @@ export class Item extends Phaser.GameObjects.Sprite {
   }
 
   float() {
-    if (this.floatTween && this.floatTween.isPlaying()) return
+    if (this.floatTween) {
+      if (this.floatTween.isPlaying()) return
+      this.floatTween.stop()
+    }
     this.floatTween = this.scene.tweens.add({
       targets: this,
       y: this.y - 7,
@@ -74,6 +85,24 @@ export class Item extends Phaser.GameObjects.Sprite {
       yoyo: true,
       duration: 500,
     })
+  }
+
+  update() {
+    const _item = this.scene.data
+      .get('ground-items')
+      .find((i: IItem) => i.key === this.itemKey)
+
+    if (_item) {
+      if (_item.timer) {
+        const remainingMS =
+          (_item.timer ?? this.scene.time.now) - this.scene.time.now
+        this.alpha = remainingMS / ITEM_TIMEOUT_DURATION
+        this.timer = _item.timer
+        if ((_item.timer ?? this.scene.time.now) - this.scene.time.now < 0) {
+          this.scene.inventoryService?.removeGroundItem(_item.key)
+        }
+      }
+    }
   }
 
   reset() {

@@ -22,5 +22,7 @@ export default class Game extends Phaser.Scene {
     this.uiService?.destroy()
   }
 
-  update() {}
+  update() {
+    this.inventoryService?.update()
+  }
 }
