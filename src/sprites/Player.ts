@@ -174,7 +174,7 @@ export class Player extends Phaser.GameObjects.Sprite {
     this.setGameData('level', this.getGameData().level + 1)
     const s = this.scene.inventoryService
     if (!s) return
-    const inv = s.getInventory()
+    const inv = s.getInventory(this.dataKey)
     this.scene.data.set(`inventory-${this.dataKey}`, {
       ...inv,
       availableCellCount: inv.availableCellCount + 1,

@@ -22,17 +22,16 @@ export default class {
     ]
     this.players.forEach((p) => this.scene.add.existing(p))
 
-    this.players.forEach((p, i) =>
-      p.spawn(i === 0 ? 'knight' : i === 1 ? 'archer' : 'mage'),
-    )
+    this.players[0]?.spawn('knight')
 
     this.uis = [
-      new PlayerUI(this.scene, 0, 216, 'player-2'),
+      new PlayerUI(this.scene, 0, 216, 'player-0'),
       new PlayerUI(this.scene, PLAYER_UI_WIDTH, 216, 'player-1'),
-      new PlayerUI(this.scene, PLAYER_UI_WIDTH * 2, 216, 'player-0'),
+      new PlayerUI(this.scene, PLAYER_UI_WIDTH * 2, 216, 'player-2'),
     ]
 
-    this.uis[2].select()
+    this.uis[0].show()
+    this.uis[0].select()
 
     const B = 210
     const I = 45
@@ -58,10 +57,42 @@ export default class {
     })
   }
 
+  unlockArcher = () => {
+    this.scene.time.delayedCall(500, () => {
+      this.players[1]?.spawn('archer')
+      this.uis[1].show()
+      this.uis[0].deselect()
+      this.uis[1].deselect()
+      this.uis[2].deselect()
+      this.uis[0].setupListeners('player-1')
+      this.uis[1].setupListeners('player-0')
+    })
+  }
+
+  unlockMage = () => {
+    this.scene.time.delayedCall(500, () => {
+      this.players[2]?.spawn('mage')
+      this.uis[2].show()
+      this.uis[0].deselect()
+      this.uis[1].deselect()
+      this.uis[2].deselect()
+      this.uis[0].setupListeners('player-2')
+      this.uis[1].setupListeners('player-1')
+      this.uis[2].setupListeners('player-0')
+    })
+  }
+
   nextDungeon = () => {
     this.roomIndex = 0
-    // TODO: 
-    this.levelKey = 'desert'
+
+    // TODO:
+    if (this.levelKey === 'dungeon') {
+      this.unlockArcher()
+      this.levelKey = 'desert'
+    } else if (this.levelKey === 'desert') {
+      this.unlockMage()
+      this.levelKey = 'jungle'
+    }
 
     this.nextRoom()
   }

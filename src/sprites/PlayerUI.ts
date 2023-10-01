@@ -12,17 +12,27 @@ import {
 export class PlayerUI {
   scene: Game
   bg: Phaser.GameObjects.Rectangle
+  bars: Bar[]
+  xpBar: Bar
+  portrait: Phaser.GameObjects.Rectangle
+  healthBar: Bar
+  manaBar: Bar
+  fatigueBar: Bar
+  key: string
+  isActive: boolean
   constructor(scene: Game, x: number, y: number, key: string) {
     this.scene = scene
 
+    this.key = key
+    this.isActive = false
     this.bg = this.scene.add
       .rectangle(x, y, PLAYER_UI_WIDTH, PORTRAIT_SIZE, 0x000000)
       .setOrigin(0)
       .setInteractive()
       .on('pointerdown', () => {
         this.scene.dungeonService?.uis.forEach((ui) => ui.deselect())
-        this.select()
-        this.scene.inventoryService?.setActiveInventoryKey(key)
+        if (this.isActive) this.select()
+        this.scene.inventoryService?.setActiveInventoryKey(this.key)
       })
 
     this.scene.add
@@ -35,7 +45,7 @@ export class PlayerUI {
       )
       .setOrigin(0)
 
-    this.scene.add
+    this.portrait = this.scene.add
       .rectangle(
         x + 2,
         y + 2,
@@ -45,7 +55,7 @@ export class PlayerUI {
       )
       .setOrigin(0)
 
-    const healthBar = new Bar(
+    this.healthBar = new Bar(
       this.scene,
       x + PORTRAIT_SIZE,
       y,
@@ -54,7 +64,7 @@ export class PlayerUI {
       'red',
     )
 
-    const manaBar = new Bar(
+    this.manaBar = new Bar(
       this.scene,
       x + PORTRAIT_SIZE,
       y + BAR_HEIGHT,
@@ -63,7 +73,7 @@ export class PlayerUI {
       'blue',
     )
 
-    const fatigueBar = new Bar(
+    this.fatigueBar = new Bar(
       this.scene,
       x + PORTRAIT_SIZE,
       y + BAR_HEIGHT * 2,
@@ -72,7 +82,7 @@ export class PlayerUI {
       'green',
     )
 
-    const xpBar = new Bar(
+    this.xpBar = new Bar(
       this.scene,
       x + PORTRAIT_SIZE,
       y + BAR_HEIGHT * 3,
@@ -80,25 +90,40 @@ export class PlayerUI {
       BAR_HEIGHT,
       'cyan',
     )
-    const d = this.scene.data.get(`player-${key}`)
-    healthBar.setMax(d?.health ?? 0)
-    fatigueBar.setMax(d?.maxFatigue ?? 0)
-    xpBar.setMax(XP_LEVELS[1])
-    xpBar.update(0)
-    healthBar.update(d?.health ?? 0)
-
-    this.scene.data.events.on(
-      `changedata-player-${key}`,
-      (a: any, c: IPlayer) => {
-        healthBar.update(c.health)
-        fatigueBar.update(c.fatigue)
-        xpBar.setMax(XP_LEVELS[c.level])
-        xpBar.update(c.experience - XP_LEVELS[c.level - 1])
-      },
-    )
+    this.bars = [this.healthBar, this.manaBar, this.fatigueBar, this.xpBar]
+    this.setupListeners(key)
+    this.hide()
   }
 
-  update() {}
+  setupListeners(key: string) {
+    this.scene.data.events.off(`changedata-player-${this.key}`, this.update)
+    this.key = key
+    this.portrait.setFillStyle(this.scene.data.values[`player-${key}`].color)
+    this.scene.data.events.on(`changedata-player-${key}`, this.update)
+    const d = this.scene.data.get(`player-${key}`)
+    this.healthBar.setMax(d?.health ?? 0)
+    this.fatigueBar.setMax(d?.maxFatigue ?? 0)
+    this.xpBar.setMax(XP_LEVELS[1])
+    this.xpBar.update(0)
+    this.healthBar.update(d?.health ?? 0)
+  }
+
+  update = (a: any, c: IPlayer) => {
+    this.healthBar.update(c.health)
+    this.fatigueBar.update(c.fatigue)
+    this.xpBar.setMax(XP_LEVELS[c.level])
+    this.xpBar.update(c.experience - XP_LEVELS[c.level - 1])
+  }
+
+  hide() {
+    this.isActive = false
+    this.bars.forEach((b) => b.hide())
+  }
+
+  show() {
+    this.isActive = true
+    this.bars.forEach((b) => b.show())
+  }
 
   select() {
     this.bg.setFillStyle(0xffffff)

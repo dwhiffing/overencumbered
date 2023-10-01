@@ -39,18 +39,18 @@ export const LEVELS = {
     rooms: [
       ['red_slime', 'red_slime', 'red_slime'],
       ['red_slime', 'red_slime', 'red_slime'],
-      ['red_slime', 'red_slime', 'red_slime'],
-      ['red_slime', 'red_slime', 'red_slime'],
-      ['red_slime', 'red_slime', 'red_slime'],
+    ],
+  },
+  jungle: {
+    rooms: [
+      ['blue_slime', 'blue_slime', 'blue_slime'],
+      ['blue_slime', 'blue_slime', 'blue_slime'],
     ],
   },
   desert: {
     rooms: [
-      ['blue_slime', 'blue_slime', 'blue_slime'],
-      ['red_slime', 'red_slime', 'red_slime'],
-      ['red_slime', 'red_slime', 'red_slime'],
-      ['red_slime', 'red_slime', 'red_slime'],
-      ['red_slime', 'red_slime', 'red_slime'],
+      ['green_slime', 'green_slime', 'green_slime'],
+      ['green_slime', 'green_slime', 'green_slime'],
     ],
   },
 }
