@@ -6,6 +6,7 @@ export const BAR_WIDTH = 76
 export const BAR_HEIGHT = 16
 export const PLAYER_UI_WIDTH = PORTRAIT_SIZE + BAR_WIDTH
 export const ATTACK_SPEED = 200
+export const ITEM_TIMEOUT_DURATION = 10000
 export const SPEED = 2
 
 export interface IPlayer {
@@ -29,6 +30,7 @@ export interface IItem {
   type: string
   x: number
   y: number
+  timer?: number
 }
 export const RECIPES = {
   potion: ['flask', 'slime'],

@@ -2,9 +2,9 @@ import Game from '../scenes/Game'
 import {
   IInventory,
   IItem,
-  INITIAL_CELLS,
   INITIAL_INV,
   ITEMS,
+  ITEM_TIMEOUT_DURATION,
   OFFSET_X,
   OFFSET_Y,
   RECIPES,
@@ -307,6 +307,7 @@ export default class {
       key: Phaser.Math.RND.uuid(),
       x: x + Phaser.Math.RND.between(-20, 20),
       y: y + Phaser.Math.RND.between(-20, 20),
+      timer: this.scene.time.now + ITEM_TIMEOUT_DURATION,
     })
     this.render()
   }
@@ -413,17 +414,30 @@ export default class {
     inventory.items
       ?.filter((i) => !i.key || i.key !== this.selectedItem?.itemKey)
       .forEach((o: IItem, i: number) => {
-        if (items?.[i]) this.moveItem(items[i], o)
+        const item = items.find((i) => i.lastItemKey === o.key) ?? items[i]
+        if (item) this.moveItem(item, o)
       })
 
-    this.scene.data.get('ground-items').forEach((o: IItem, i: number) => {
-      let j = i + inventory.items.length
-      if (this.items?.[j]) {
-        this.items[j].spawn(o.type, o.key)
-        this.items[j].setPosition(o.x, o.y)
-        if (this.items?.[j] !== this.selectedItem) this.items[j].float()
-      }
-    })
+    const groundItems = this.scene.data.get('ground-items') as IItem[]
+    groundItems
+      ?.filter((i) => !i.key || i.key !== this.selectedItem?.itemKey)
+      .forEach((o: IItem, i: number) => {
+        let j = i + inventory.items.length
+        const item = items.find((i) => i.lastItemKey === o.key) ?? items[j]
+        if (!item) return
+        item.spawn(o.type, o.key)
+        item.setPosition(o.x, o.y)
+        if (o.timer) {
+          const remainingMS =
+            (o.timer ?? this.scene.time.now) - this.scene.time.now
+          item.alpha = remainingMS / ITEM_TIMEOUT_DURATION
+          item.timer = o.timer
+        }
+        if ((o.timer ?? this.scene.time.now) - this.scene.time.now < 0) {
+          this.removeGroundItem(o.key)
+        }
+        if (item !== this.selectedItem) item.float()
+      })
   }
 
   selectItem = (item?: Item) => {
@@ -454,7 +468,12 @@ export default class {
       'ground-items'
     ].map((i: IItem) =>
       i.key === this.selectedItem?.itemKey
-        ? { ...i, x: x - TILE_SIZE / 2, y: y - TILE_SIZE / 2 }
+        ? {
+            ...i,
+            x: x - TILE_SIZE / 2,
+            y: y - TILE_SIZE / 2,
+            timer: this.scene.time.now + ITEM_TIMEOUT_DURATION,
+          }
         : i,
     )
   }
@@ -472,6 +491,7 @@ export default class {
         ..._item,
         x: item.x,
         y: item.y,
+        timer: this.scene.time.now + ITEM_TIMEOUT_DURATION,
       })
       this.removeItem(_item.key)
     }

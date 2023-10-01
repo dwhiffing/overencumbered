@@ -4,8 +4,10 @@ import { ITEMS, OFFSET_X, OFFSET_Y, screenToTile, TILE_SIZE } from '../utils'
 export class Item extends Phaser.GameObjects.Sprite {
   dataKey: string
   scene: Game
+  lastItemKey?: string
   itemKey?: string
   itemType?: string
+  timer?: number
   isSelected?: boolean
   isOnGround?: boolean
   floatTween?: Phaser.Tweens.Tween
@@ -75,6 +77,7 @@ export class Item extends Phaser.GameObjects.Sprite {
   }
 
   reset() {
+    this.lastItemKey = this.itemKey
     this.itemKey = undefined
     this.itemType = undefined
     this.lastPosition = undefined
