@@ -205,17 +205,17 @@ export class Player extends Phaser.GameObjects.Sprite {
     damager.getExperience(this.getGameData().level)
     const isEnemy = !!this.dataKey.match(/enemy/)
     if (isEnemy) {
-      if (Phaser.Math.RND.between(0, 1) === 0) {
-        this.scene.data.values['loot-counters'] = {
-          ...counters,
-          [this.playerType!]: killCount + 1,
-        }
-        this.scene.inventoryService?.dropLoot(
-          this.x - 16,
-          this.y - 60,
-          this.playerType!,
-        )
+      // if (Phaser.Math.RND.between(0, 1) !== 0) return
+
+      this.scene.data.values['loot-counters'] = {
+        ...counters,
+        [this.playerType!]: killCount + 1,
       }
+      this.scene.inventoryService?.dropLoot(
+        this.x - 16,
+        this.y - 60,
+        this.playerType!,
+      )
     }
   }
 }
