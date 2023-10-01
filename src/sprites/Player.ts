@@ -4,6 +4,7 @@ import { Bar } from './Bar'
 
 export class Player extends Phaser.GameObjects.Sprite {
   dataKey: string
+  playerType?: string
   tintColor: number
   healthBar: Bar
   fatigueBar: Bar
@@ -106,14 +107,13 @@ export class Player extends Phaser.GameObjects.Sprite {
   }
 
   spawn(type: string) {
-    let { health, fatigue, damage, color } = STATS[type as keyof typeof STATS]
+    let { health, fatigue, color } = STATS[type as keyof typeof STATS]
+    this.playerType = type
     this.setTintFill(color)
+    this.updateStats()
     this.setGameData('health', health)
-    this.setGameData('maxHealth', health)
     this.setGameData('fatigue', 0)
-    this.setGameData('damage', damage)
     this.setGameData('color', color)
-    this.setGameData('maxFatigue', fatigue)
     if (type === 'slime') {
       this.healthBar.setMax(health)
       this.fatigueBar.setMax(fatigue)
@@ -122,7 +122,21 @@ export class Player extends Phaser.GameObjects.Sprite {
     this.setAlpha(1)
   }
 
+  updateStats = () => {
+    let { health, armor, fatigue, damage } =
+      STATS[this.playerType as keyof typeof STATS]
+    const inventoryStats = (this.scene.inventoryService?.getInventoryStats(
+      this.dataKey,
+    ) ?? {}) as IPlayer
+
+    this.setGameData('maxHealth', health + (inventoryStats.health ?? 0))
+    this.setGameData('damage', damage + (inventoryStats.damage ?? 0))
+    this.setGameData('armor', armor + (inventoryStats.armor ?? 0))
+    this.setGameData('maxFatigue', fatigue + (inventoryStats.fatigue ?? 0))
+  }
+
   attack(target: Player) {
+    this.updateStats()
     this.scene.tweens.add({
       targets: this,
       x: this.x + (this.x > 200 ? -20 : 20),
@@ -142,13 +156,16 @@ export class Player extends Phaser.GameObjects.Sprite {
       [k]: v,
     })
 
-  damage(n: number) {
+  damage(incomingDamage: number) {
     const health = this.getGameData().health
-    this.setGameData('health', Math.max(0, health - n))
+    const armor = this.getGameData().armor
+    const mitigatedDamage = incomingDamage - armor
+    const newHealth = health - mitigatedDamage
+    this.setGameData('health', Math.max(0, newHealth))
     this.setTintFill(0xffffff)
     this.scene.time.delayedCall(ATTACK_SPEED / SPEED / 2, () => {
       this.setTintFill(this.getGameData().color)
-      if (health - n <= 0) this.die()
+      if (newHealth <= 0) this.die()
     })
   }
 

@@ -13,6 +13,7 @@ export interface IPlayer {
   maxHealth: number
   fatigue: number
   damage: number
+  armor: number
   color: number
   maxFatigue: number
 }
@@ -38,16 +39,25 @@ export const ITEMS = {
     width: 2,
     height: 3,
     color: 0xffffff,
+    effects: {
+      armor: 10,
+    },
   },
   helmet: {
     width: 2,
     height: 2,
     color: 0xffffff,
+    effects: {
+      armor: 2,
+    },
   },
   sword: {
     width: 1,
     height: 4,
     color: 0xffffff,
+    effects: {
+      damage: 10,
+    },
   },
   flask: {
     width: 1,
@@ -70,23 +80,27 @@ export const STATS = {
   archer: {
     damage: 1,
     health: 20,
+    armor: 0,
     fatigue: 10,
     color: 0x55ff55,
   },
   mage: {
     damage: 1,
     health: 20,
+    armor: 0,
     fatigue: 50,
     color: 0x5555ff,
   },
   knight: {
     damage: 2,
     health: 20,
+    armor: 0,
     fatigue: 20,
     color: 0xff5555,
   },
   slime: {
-    damage: 1,
+    armor: 0,
+    damage: 3,
     health: 20,
     fatigue: 30,
     color: 0xff5555,
@@ -120,7 +134,7 @@ export const INITIAL_CELLS = [
 
 export const INITIAL_INV = {
   openCells: INITIAL_CELLS,
-  availableCellCount: 30,
-  // availableCellCount: 0,
+  // availableCellCount: 30,
+  availableCellCount: 0,
   items: [],
 }

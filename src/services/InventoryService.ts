@@ -124,6 +124,20 @@ export default class {
     })
   }
 
+  getInventoryStats = (key: string) => {
+    let damage = this.getInventoryStat(key, 'damage')
+    let armor = this.getInventoryStat(key, 'armor')
+    return { damage, armor }
+  }
+
+  getInventoryStat = (key: string, stat: string) => {
+    const inv = this.getInventory(key)
+    return inv.items.reduce((sum, item) => {
+      const stats = ITEMS[item.type as keyof typeof ITEMS] as any
+      return stats.effects ? sum + (stats.effects[stat] ?? 0) : sum
+    }, 0)
+  }
+
   unlockTile = (x: number, y: number) => {
     const inv = this.getInventory()
     this.scene.data.set(`inventory-${this.inventoryKey}`, {
@@ -185,8 +199,10 @@ export default class {
     this.selectedItem = undefined
   }
 
-  getInventory() {
-    const inv = this.scene.data.get(`inventory-${this.inventoryKey}`) ?? {
+  getInventory(key?: string) {
+    const inv = this.scene.data.get(
+      `inventory-${key ?? this.inventoryKey}`,
+    ) ?? {
       items: [],
     }
     return { ...inv, items: inv.items } as IInventory
