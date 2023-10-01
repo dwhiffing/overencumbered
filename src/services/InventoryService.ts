@@ -116,6 +116,12 @@ export default class {
       }
     })
 
+    this.scene.time.addEvent({
+      repeat: -1,
+      callback: this.render,
+      delay: 200,
+    })
+
     this.render()
   }
 
@@ -198,9 +204,19 @@ export default class {
     this.render()
   }
 
-  getOpenSlot = () => {
-    const cell = this.getInventory().openCells.find(
-      ([x, y]: number[]) => this.getTile(x, y).index === 0,
+  isSlotOpen = (x: number, y: number, width: number, height: number) => {
+    let result = true
+    for (let _x = x; _x < x + width; _x++) {
+      for (let _y = y; _y < y + height; _y++) {
+        if (this.getTile(_x, _y).index !== 0) result = false
+      }
+    }
+    return result
+  }
+
+  getOpenSlot = (width = 1, height = 1) => {
+    const cell = this.getInventory().openCells.find(([x, y]: number[]) =>
+      this.isSlotOpen(x, y, width, height),
     )
     if (cell) return { x: cell[0], y: cell[1] }
   }
@@ -211,17 +227,17 @@ export default class {
     y?: number,
     existingItemKey?: string,
   ) => {
+    const stats = ITEMS[itemType as keyof typeof ITEMS]
     const inv = this.getInventory()
     const key = `item-${Phaser.Math.RND.uuid()}`
-    if (!x || !y) {
-      const openSlot = this.getOpenSlot()
+    if (!x || !y || !this.isSlotOpen(x, y, stats.width, stats.height)) {
+      const openSlot = this.getOpenSlot(stats.width, stats.height)
       if (openSlot) {
         x = openSlot.x
         y = openSlot.y
       }
     }
     if (x && y) {
-      const stats = ITEMS[itemType as keyof typeof ITEMS]
       this.map.fill(1, x, y, stats.width ?? 1, stats.height ?? 1)
       if (existingItemKey) this.removeGroundItem(existingItemKey)
       this.scene.data.set(`inventory-${this.inventoryKey}`, {
@@ -252,12 +268,14 @@ export default class {
       const tile = this.getTile(pos.x, pos.y)
       const key = this.selectedItem.itemKey!
       const type = this.selectedItem.itemType!
+      const stats = ITEMS[this.selectedItem.itemType as keyof typeof ITEMS]
+      const open = this.getOpenSlot(stats.width, stats.height)
       if (!tile) {
         this.moveGroundItem(key, x, y)
-      } else if (tile.index !== 0) {
-        this.selectedItem.putBack()
-      } else {
+      } else if (open) {
         this.addItem(type, pos.x, pos.y, key)
+      } else {
+        this.selectedItem.putBack()
       }
     }
     this.deselect()
@@ -287,8 +305,8 @@ export default class {
     this.scene.data.values['ground-items'].push({
       type,
       key: Phaser.Math.RND.uuid(),
-      x: x + Phaser.Math.RND.between(-5, 5),
-      y: y + Phaser.Math.RND.between(-5, 5),
+      x: x + Phaser.Math.RND.between(-20, 20),
+      y: y + Phaser.Math.RND.between(-20, 20),
     })
     this.render()
   }
@@ -302,7 +320,10 @@ export default class {
     const existingItem = this.items?.find((i) => {
       const pos = screenToTile(i)
       return (
-        i.itemKey !== item.itemKey && pos.x === newPos.x && pos.y === newPos.y
+        i.itemKey !== item.itemKey &&
+        i !== this.selectedItem &&
+        pos.x === newPos.x &&
+        pos.y === newPos.y
       )
     })
     const stats = ITEMS[(newPos.type ?? item.itemType) as keyof typeof ITEMS]
@@ -368,10 +389,13 @@ export default class {
     })
   }
 
-  render() {
+  render = () => {
     if (!this.items) return
     const inventory = this.getInventory()
-    this.items?.forEach((o) => o.reset())
+    const items = this.items?.filter(
+      (i) => !i.itemKey || i.itemKey !== this.selectedItem?.itemKey,
+    )
+    items.forEach((o) => o.reset())
     this.map.fill(2)
     inventory.openCells.forEach(([x, y]: number[]) => {
       this.placeTile(x, y, 0)
@@ -386,10 +410,11 @@ export default class {
           if (t && t.index !== 0) this.placeTile(t.x, t.y, 3)
         })
     })
-
-    inventory.items.forEach((o: IItem, i: number) => {
-      if (this.items?.[i]) this.moveItem(this.items[i], o)
-    })
+    inventory.items
+      ?.filter((i) => !i.key || i.key !== this.selectedItem?.itemKey)
+      .forEach((o: IItem, i: number) => {
+        if (items?.[i]) this.moveItem(items[i], o)
+      })
 
     this.scene.data.get('ground-items').forEach((o: IItem, i: number) => {
       let j = i + inventory.items.length

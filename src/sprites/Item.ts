@@ -48,6 +48,7 @@ export class Item extends Phaser.GameObjects.Sprite {
 
   select() {
     this.setDepth(3)
+    this.setAlpha(1)
     this.floatTween?.stop()
     this.lastPosition = { x: this.x, y: this.y }
   }
