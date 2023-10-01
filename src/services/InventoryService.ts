@@ -401,6 +401,7 @@ export default class {
 
   renderInventory = () => {
     if (!this.items) return
+    const items = this.items.filter((i) => i !== this.selectedItem)
     const inventory = this.getInventory()
     this.items.forEach((o) => o.reset())
     this.map.fill(2)
@@ -417,9 +418,17 @@ export default class {
           if (t && t.index !== 0) this.placeTile(t.x, t.y, 3)
         })
     })
-    inventory.items.forEach((o: IItem, i: number) => {
+    const sorted = inventory.items.sort((a, b) => {
+      const aHas = items!.find((i) => i.lastItemKey === a.key)
+      const bHas = items!.find((i) => i.lastItemKey === b.key)
+      if ((aHas && bHas) || (!aHas && !bHas)) return 0
+      if (aHas) return 1
+      return -1
+    })
+    sorted.forEach((o: IItem, i: number) => {
       const item =
-        this.items!.find((i) => i.lastItemKey === o.key) ?? this.items![i]
+        this.items!.find((i) => i.lastItemKey === o.key) ??
+        items!.find((i) => !i.lastItemKey)
       if (item) this.moveItem(item, o)
     })
   }
