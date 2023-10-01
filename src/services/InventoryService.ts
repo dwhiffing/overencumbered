@@ -56,6 +56,7 @@ export default class {
       .createLayer(0, this.map.addTilesetImage('tiles'), OFFSET_X, OFFSET_Y)
       .setScale(1)
 
+    this.scene.data.set(`ground-items`, [])
     this.scene.data.set(`inventory-player-0`, INITIAL_INV)
     this.scene.data.set(`inventory-player-1`, INITIAL_INV)
     this.scene.data.set(`inventory-player-2`, INITIAL_INV)
@@ -204,7 +205,12 @@ export default class {
     if (cell) return { x: cell[0], y: cell[1] }
   }
 
-  addItem = (itemType: string, x?: number, y?: number) => {
+  addItem = (
+    itemType: string,
+    x?: number,
+    y?: number,
+    existingItemKey?: string,
+  ) => {
     const inv = this.getInventory()
     const key = `item-${Phaser.Math.RND.uuid()}`
     if (!x || !y) {
@@ -217,6 +223,7 @@ export default class {
     if (x && y) {
       const stats = ITEMS[itemType as keyof typeof ITEMS]
       this.map.fill(1, x, y, stats.width ?? 1, stats.height ?? 1)
+      if (existingItemKey) this.removeGroundItem(existingItemKey)
       this.scene.data.set(`inventory-${this.inventoryKey}`, {
         ...inv,
         items: [...inv.items, { key, type: itemType, x, y }],
@@ -228,7 +235,7 @@ export default class {
     if (!this.selectedItem) return
     // if the selected item isnt in the inventory, we should add it instead of moving it.
     // we can tell because for items in the inventory, we will set an item key
-    if (this.selectedItem.itemKey) {
+    if (!this.selectedItem.isOnGround) {
       let pos = screenToTile({ x, y })
       const offsetX = Math.floor(
         (this.selectedItem.clickOffset?.x ?? 0) / TILE_SIZE,
@@ -242,10 +249,23 @@ export default class {
       })
     } else {
       const pos = screenToTile({ x, y })
-      this.addItem('slime', pos.x, pos.y)
+      const tile = this.getTile(pos.x, pos.y)
+      const key = this.selectedItem.itemKey!
+      const type = this.selectedItem.itemType!
+      if (!tile) {
+        this.moveGroundItem(key, x, y)
+      } else if (tile.index !== 0) {
+        this.selectedItem.putBack()
+      } else {
+        this.addItem(type, pos.x, pos.y, key)
+      }
     }
-    this.render()
+    this.deselect()
+  }
+
+  deselect = () => {
     this.selectedItem = undefined
+    this.render()
   }
 
   getInventory(key?: string) {
@@ -263,6 +283,7 @@ export default class {
   }
 
   dropLoot(x: number, y: number) {
+    // TODO:
     const i = this.items?.find((i) => !i.alpha)
     i?.setAlpha(1)
     i?.setPosition(
@@ -275,6 +296,8 @@ export default class {
     item: Item,
     newPos: { x: number; y: number; key?: string; type?: string },
   ) {
+    if (newPos.y < 0) return this.dropItem(item)
+
     const existingItem = this.items?.find((i) => {
       const pos = screenToTile(i)
       return (
@@ -330,7 +353,8 @@ export default class {
       this.placeTile(oldPos.x, oldPos.y, 0)
     }
 
-    item.spawn(newPos.x, newPos.y, newPos.type, newPos.key)
+    item.spawn(newPos.type, newPos.key)
+    item.moveToTilePosition(newPos.x, newPos.y)
 
     this.map.fill(1, newPos.x, newPos.y, stats.width ?? 1, stats.height ?? 1)
 
@@ -365,18 +389,29 @@ export default class {
     inventory.items.forEach((o: IItem, i: number) => {
       if (this.items?.[i]) this.moveItem(this.items[i], o)
     })
+
+    this.scene.data.get('ground-items').forEach((o: IItem, i: number) => {
+      let j = i + inventory.items.length
+      if (this.items?.[j]) {
+        this.items[j].spawn(o.type, o.key)
+        this.items[j].setPosition(o.x, o.y)
+        if (this.items?.[j] !== this.selectedItem) this.items[j].float()
+      }
+    })
   }
 
   selectItem = (item?: Item) => {
     if (!item) return
 
     this.hideTooltip()
+    item.select()
     this.selectedItem = item
   }
 
   hoverItem = (item?: Item) => {
     if (!item || this.selectedItem) return
     const stats = ITEMS[item.itemType as keyof typeof ITEMS] as any
+    if (!stats) return
 
     this.moveToolTip(
       item.x + 5,
@@ -386,6 +421,34 @@ export default class {
         '',
       ),
     )
+  }
+
+  moveGroundItem = (itemKey: string, x: number, y: number) => {
+    this.scene.data.values['ground-items'] = this.scene.data.values[
+      'ground-items'
+    ].map((i: IItem) =>
+      i.key === this.selectedItem?.itemKey
+        ? { ...i, x: x - TILE_SIZE / 2, y: y - TILE_SIZE / 2 }
+        : i,
+    )
+  }
+
+  removeGroundItem = (itemKey: string) => {
+    this.scene.data.values['ground-items'] = this.scene.data.values[
+      'ground-items'
+    ].filter((i: IItem) => i.key !== itemKey)
+  }
+
+  dropItem = (item: Item) => {
+    const _item = this.getInventory().items.find((i) => i.key === item.itemKey)!
+    if (_item) {
+      this.scene.data.values['ground-items'].push({
+        ..._item,
+        x: item.x,
+        y: item.y,
+      })
+      this.removeItem(_item.key)
+    }
   }
 
   getTile = (x: number, y: number) => this.map.getTileAt(x, y)
