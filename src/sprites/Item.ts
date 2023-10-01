@@ -45,6 +45,7 @@ export class Item extends Phaser.GameObjects.Sprite {
   reset() {
     this.itemKey = undefined
     this.itemType = undefined
+    this.lastPosition = undefined
     this.setAlpha(0).setPosition(-TILE_SIZE, -TILE_SIZE)
   }
 

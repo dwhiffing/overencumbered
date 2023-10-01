@@ -78,3 +78,27 @@ export const screenToTile = (v?: { x: number; y: number }) => {
     x: Math.floor(((v?.x ?? 0) - OFFSET_X) / TILE_SIZE),
   }
 }
+
+export const INITIAL_CELLS = [
+  [3, 3],
+  [4, 3],
+  [5, 3],
+  [6, 3],
+  [3, 4],
+  [4, 4],
+  [5, 4],
+  [6, 4],
+  [3, 5],
+  [4, 5],
+  [5, 5],
+  [6, 5],
+  [3, 6],
+  [4, 6],
+  [5, 6],
+  [6, 6],
+]
+
+export const INITIAL_INV = {
+  openCells: INITIAL_CELLS,
+  items: [],
+}

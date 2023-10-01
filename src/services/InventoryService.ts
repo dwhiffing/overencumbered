@@ -1,6 +1,8 @@
 import Game from '../scenes/Game'
 import {
   IItem,
+  INITIAL_CELLS,
+  INITIAL_INV,
   OFFSET_X,
   OFFSET_Y,
   RECIPES,
@@ -49,22 +51,13 @@ export default class {
       .createLayer(0, this.map.addTilesetImage('tiles'), OFFSET_X, OFFSET_Y)
       .setScale(1)
 
-    this.scene.data.set(`inventory-player-0`, { items: [] })
-    this.scene.data.set(`inventory-player-1`, { items: [] })
-    this.scene.data.set(`inventory-player-2`, { items: [] })
-    this.addItem('flask', 0, 0)
-    this.addItem('flask', 1, 0)
-    this.addItem('flask', 2, 0)
-    this.addItem('flask', 3, 0)
-    this.addItem('flask', 4, 0)
-    this.addItem('flask', 5, 0)
-    this.addItem('slime', 0, 1)
-    this.addItem('slime', 1, 1)
-    this.addItem('slime', 2, 1)
-    this.addItem('slime', 3, 1)
-    this.addItem('slime', 4, 1)
-    this.addItem('slime', 5, 1)
-    // this.addItem('potion', 2, 0)
+    this.scene.data.set(`inventory-player-0`, INITIAL_INV)
+    this.scene.data.set(`inventory-player-1`, INITIAL_INV)
+    this.scene.data.set(`inventory-player-2`, INITIAL_INV)
+    this.addItem('flask')
+    this.addItem('flask')
+    this.addItem('slime')
+    this.addItem('slime')
 
     this.items = new Array(30).fill('').map((_, i) => {
       const item = new Item(this.scene, `item-${i}`, 0, 0)
@@ -101,16 +94,35 @@ export default class {
   removeItem = (key: string) => {
     const inv = this.getInventory()
     this.scene.data.set(`inventory-${this.inventoryKey}`, {
+      ...inv,
       items: inv.items.filter((item: IItem) => item.key !== key),
     })
   }
 
-  addItem = (itemType: string, x: number, y: number) => {
+  getOpenSlot = () => {
+    const cell = this.getInventory().openCells.find(
+      ([x, y]: number[]) => this.getTile(x, y).index === 0,
+    )
+    if (cell) return { x: cell[0], y: cell[1] }
+  }
+
+  addItem = (itemType: string, x?: number, y?: number) => {
     const inv = this.getInventory()
     const key = `item-${Phaser.Math.RND.uuid()}`
-    this.scene.data.set(`inventory-${this.inventoryKey}`, {
-      items: [...inv.items, { key, type: itemType, x, y }],
-    })
+    if (!x || !y) {
+      const openSlot = this.getOpenSlot()
+      if (openSlot) {
+        x = openSlot.x
+        y = openSlot.y
+      }
+    }
+    if (x && y) {
+      this.placeTile(x, y, 1)
+      this.scene.data.set(`inventory-${this.inventoryKey}`, {
+        ...inv,
+        items: [...inv.items, { key, type: itemType, x, y }],
+      })
+    }
   }
 
   moveSelectedItem(x: number, y: number) {
@@ -177,8 +189,10 @@ export default class {
     }
     item.deselect()
 
-    const oldPos = screenToTile(item.lastPosition)
-    this.placeTile(oldPos.x, oldPos.y, 0)
+    if (item.lastPosition) {
+      const oldPos = screenToTile(item.lastPosition)
+      this.placeTile(oldPos.x, oldPos.y, 0)
+    }
 
     item.spawn(newPos.x, newPos.y, newPos.type, newPos.key)
 
@@ -187,6 +201,7 @@ export default class {
     const index = +item.dataKey.split('-')[1]
 
     this.scene.data.set(`inventory-${this.inventoryKey}`, {
+      ...inventory,
       items: inventory.items.map((_item: IItem, i: number) =>
         index !== i ? _item : { ..._item, ...newPos },
       ),
@@ -197,7 +212,8 @@ export default class {
     if (!this.items) return
     const inventory = this.getInventory()
     this.items?.forEach((o) => o.reset())
-    this.map.fill(0)
+    this.map.fill(2)
+    inventory.openCells.forEach(([x, y]: number[]) => this.placeTile(x, y, 0))
 
     inventory.items.forEach((o: IItem, i: number) => {
       if (this.items?.[i]) this.moveItem(this.items[i], o)

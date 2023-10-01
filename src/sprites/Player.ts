@@ -67,7 +67,6 @@ export class Player extends Phaser.GameObjects.Sprite {
   }
 
   usePotion = (potion: IItem) => {
-    console.log('potion', potion)
     this.scene.inventoryService?.removeItem(potion.key)
     this.scene.inventoryService?.render()
     this.setGameData('health', this.getGameData().maxHealth)
