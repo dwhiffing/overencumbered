@@ -26,12 +26,24 @@ export class Item extends Phaser.GameObjects.Sprite {
     super(scene, x, y, 'objects', 0)
     this.scene = scene
     this.dataKey = dataKey
+    let lastTime = 0
+
     this.setOrigin(0)
       .setAlpha(0)
       .setInteractive()
       .on('pointerdown', (p: any) => {
+        let clickDelay = this.scene.time.now - lastTime
+        lastTime = this.scene.time.now
+
         this.clickOffset = { x: p.x - this.x, y: p.y - this.y }
         if (this.isOnGround) {
+          if (clickDelay < 350) {
+            this.scene.inventoryService?.addItem(this.itemType!)
+            this.scene.inventoryService?.removeGroundItem(this.itemKey!)
+
+            return
+          }
+
           const s = this.scene.inventoryService
           if (s?.selectedItem?.itemKey === this.itemKey) return
           this.scene.time.delayedCall(50, () => s?.selectItem(this))
