@@ -88,6 +88,7 @@ export default class {
   }
 
   nextRoom = () => {
+    this.scene.data.set('is-next-room', false)
     const level = LEVELS[this.levelKey as keyof typeof LEVELS]
     const room = level.rooms[this.roomIndex++]
     if (!level || !room) return this.nextDungeon()
@@ -95,19 +96,27 @@ export default class {
   }
 
   checkEnemies = () => {
+    if (this.scene.data.get('is-next-room')) return
+
     if (
       this.enemies.every((e) => {
         return e.getGameData()?.health <= 0
       })
     ) {
-      this.nextRoom()
+      this.scene.data.set('is-next-room', true)
+      this.scene.time.delayedCall(2000, () => {
+        this.nextRoom()
+      })
     }
     if (
       this.players.every((e) => {
         return e.getGameData()?.health <= 0
       })
     ) {
-      this.scene.gameover()
+      this.scene.data.set('is-next-room', true)
+      this.scene.time.delayedCall(2000, () => {
+        this.scene.gameover()
+      })
     }
   }
 

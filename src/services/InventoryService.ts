@@ -62,8 +62,9 @@ export default class {
     this.scene.data.set(`inventory-player-0`, INITIAL_INV)
     this.scene.data.set(`inventory-player-1`, INITIAL_INV)
     this.scene.data.set(`inventory-player-2`, INITIAL_INV)
-    this.addItem('sword')
-    this.addItem('helmet')
+    // TODO
+    // this.addItem('sword')
+    // this.addItem('helmet')
 
     this.tooltip = this.scene.add
       .container(100, 100, [

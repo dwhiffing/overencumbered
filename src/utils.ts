@@ -38,6 +38,8 @@ export interface IItem {
 export const LEVELS = {
   dungeon: {
     rooms: [
+      ['red_slime'],
+      ['red_slime', 'red_slime'],
       ['red_slime', 'red_slime', 'red_slime'],
       ['red_slime', 'red_slime', 'red_slime'],
     ],
@@ -145,7 +147,7 @@ export const STATS = {
   },
   red_slime: {
     ...DEFAULT_PLAYER,
-    damage: 3,
+    damage: 1,
     health: 5,
     fatigue: 30,
     color: 0xff5555,
