@@ -1,5 +1,5 @@
 import Game from '../scenes/Game'
-import { OFFSET_X, OFFSET_Y, screenToTile, TILE_SIZE } from '../utils'
+import { OFFSET_X, OFFSET_Y, RECIPES, screenToTile, TILE_SIZE } from '../utils'
 import { Item } from '../sprites/Item'
 
 // list of items in inventory
@@ -45,9 +45,19 @@ export default class {
     this.scene.data.set(`inventory-player-0`, { items: [] })
     this.scene.data.set(`inventory-player-1`, { items: [] })
     this.scene.data.set(`inventory-player-2`, { items: [] })
-    this.addItem('orb', 0, 0)
-    this.addItem('orb', 1, 0)
-    this.addItem('orb', 2, 0)
+    this.addItem('flask', 0, 0)
+    this.addItem('flask', 1, 0)
+    this.addItem('flask', 2, 0)
+    this.addItem('flask', 3, 0)
+    this.addItem('flask', 4, 0)
+    this.addItem('flask', 5, 0)
+    this.addItem('slime', 0, 1)
+    this.addItem('slime', 1, 1)
+    this.addItem('slime', 2, 1)
+    this.addItem('slime', 3, 1)
+    this.addItem('slime', 4, 1)
+    this.addItem('slime', 5, 1)
+    // this.addItem('potion', 2, 0)
 
     this.items = new Array(30).fill('').map((_, i) => {
       const item = new Item(this.scene, `item-${i}`, 0, 0)
@@ -59,7 +69,15 @@ export default class {
       if (this.selectedItem) {
         this.moveSelectedItem(p.x, p.y)
       } else {
-        this.selectItem(this.items?.find((o) => o.isSelected)!)
+        this.selectItem(
+          this.items
+            ?.filter((i) => i.alpha)
+            ?.find((o) => {
+              const pos = screenToTile(p)
+              const _pos = screenToTile(o)
+              return _pos.x === pos.x && _pos.y === pos.y
+            })!,
+        )
       }
     })
 
@@ -73,6 +91,13 @@ export default class {
     this.render()
   }
 
+  removeItem = (key: string) => {
+    const inv = this.scene.data.get(`inventory-${this.inventoryKey}`) ?? []
+    this.scene.data.set(`inventory-${this.inventoryKey}`, {
+      items: inv.items.filter((item: any) => item.key !== key),
+    })
+  }
+
   addItem = (itemType: string, x: number, y: number) => {
     const thing = this.scene.data.get(`inventory-${this.inventoryKey}`) ?? []
     this.scene.data.set(`inventory-${this.inventoryKey}`, {
@@ -80,7 +105,7 @@ export default class {
         ...thing.items,
         {
           key: `item-${Phaser.Math.RND.uuid()}`,
-          type: itemType ?? 'orb',
+          type: itemType,
           x,
           y,
         },
@@ -96,9 +121,9 @@ export default class {
       this.moveItem(this.selectedItem, screenToTile({ x, y }))
     } else {
       const pos = screenToTile({ x, y })
-      this.addItem('orb', pos.x, pos.y)
-      this.render()
+      this.addItem('slime', pos.x, pos.y)
     }
+    this.render()
     this.selectedItem = undefined
   }
 
@@ -116,11 +141,30 @@ export default class {
     )
   }
 
-  moveItem(item: Item, newPos: { x: number; y: number }, key?: string) {
+  moveItem(
+    item: Item,
+    newPos: { x: number; y: number; key?: string; type?: string },
+  ) {
     const isTileOccupied = this.getTile(newPos.x, newPos.y)?.index !== 0
+    const existingItem = this.items?.find((i) => {
+      const pos = screenToTile(i)
+      return i !== item && pos.x === newPos.x && pos.y === newPos.y
+    })
     if (!item) return
 
     if (isTileOccupied) {
+      const validRecipe = Object.entries(RECIPES).find(
+        ([key, [partA, partB]]) =>
+          (item.itemType === partA && existingItem?.itemType === partB) ||
+          (item.itemType === partB && existingItem?.itemType === partA),
+      )
+      if (validRecipe) {
+        if (item.itemKey) this.removeItem(item.itemKey)
+        if (existingItem?.itemKey) this.removeItem(existingItem.itemKey)
+        const pos = screenToTile(existingItem)
+        this.addItem(validRecipe[0], pos.x, pos.y)
+        this.render()
+      }
       item.putBack()
       return
     }
@@ -128,9 +172,8 @@ export default class {
 
     const oldPos = screenToTile(item.lastPosition)
     this.placeTile(oldPos.x, oldPos.y, 0)
-    item.setAlpha(1)
-    if (key) item.itemKey = key
-    item.moveToTilePosition(newPos.x, newPos.y)
+
+    item.spawn(newPos.x, newPos.y, newPos.type, newPos.key)
 
     this.placeTile(newPos.x, newPos.y, 1)
     const inventory = this.scene.data.get(`inventory-${this.inventoryKey}`)
@@ -146,19 +189,16 @@ export default class {
   render() {
     if (!this.items) return
     const inventory = this.scene.data.get(`inventory-${this.inventoryKey}`)
-    this.items?.forEach((o) => {
-      o.reset()
-    })
-
+    this.items?.forEach((o) => o.reset())
     this.map.fill(0)
 
     inventory.items.forEach((o: any, i: number) => {
-      this.moveItem(this.items![i], o, o.key)
+      if (this.items?.[i]) this.moveItem(this.items[i], o)
     })
   }
 
   selectItem = (item?: Item) => {
-    if (item?.isSelected) this.selectedItem = item
+    this.selectedItem = item
   }
 
   getTile = (x: number, y: number) => this.map.getTileAt(x, y)

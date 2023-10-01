@@ -8,6 +8,28 @@ export const PLAYER_UI_WIDTH = PORTRAIT_SIZE + BAR_WIDTH
 export const ATTACK_SPEED = 200
 export const SPEED = 2
 
+export const RECIPES = {
+  potion: ['flask', 'slime'],
+}
+
+export const ITEMS = {
+  flask: {
+    width: 1,
+    height: 1,
+    color: 0xffffff,
+  },
+  slime: {
+    width: 1,
+    height: 1,
+    color: 0xff5555,
+  },
+  potion: {
+    width: 1,
+    height: 1,
+    color: 0xff0000,
+  },
+}
+
 export const STATS = {
   archer: {
     damage: 1,

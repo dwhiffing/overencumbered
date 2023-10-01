@@ -1,8 +1,9 @@
-import { OFFSET_X, OFFSET_Y, TILE_SIZE } from '../utils'
+import { ITEMS, OFFSET_X, OFFSET_Y, TILE_SIZE } from '../utils'
 
 export class Item extends Phaser.GameObjects.Sprite {
   dataKey: string
   itemKey?: string
+  itemType?: string
   isSelected?: boolean
   clickOffset?: { x: number; y: number }
   lastPosition?: { x: number; y: number }
@@ -19,15 +20,21 @@ export class Item extends Phaser.GameObjects.Sprite {
     this.setTintFill(0xffff55)
   }
 
-  select() {
-    if (this.isSelected) return
-    this.lastPosition = { x: this.x + 1, y: this.y + 1 }
-    this.isSelected = true
+  spawn(x: number, y: number, itemType?: string, itemKey?: string) {
+    // TODO: width/height
+    const stats = ITEMS[itemType as keyof typeof ITEMS]
+    if (stats) this.setTintFill(stats.color)
+    if (itemType) this.itemType = itemType
+    if (itemKey) this.itemKey = itemKey
+    this.setAlpha(1)
+    this.moveToTilePosition(x, y)
   }
 
-  deselect() {
-    this.isSelected = false
+  select() {
+    this.lastPosition = { x: this.x + 1, y: this.y + 1 }
   }
+
+  deselect() {}
 
   putBack() {
     if (this.lastPosition) {
@@ -37,6 +44,7 @@ export class Item extends Phaser.GameObjects.Sprite {
 
   reset() {
     this.itemKey = undefined
+    this.itemType = undefined
     this.setAlpha(0).setPosition(-TILE_SIZE, -TILE_SIZE)
   }
 
@@ -45,7 +53,7 @@ export class Item extends Phaser.GameObjects.Sprite {
       this.putBack()
       return
     }
-    this.x = OFFSET_X - 1 + x * TILE_SIZE
-    this.y = OFFSET_Y - 1 + y * TILE_SIZE
+    this.x = OFFSET_X + x * TILE_SIZE
+    this.y = OFFSET_Y + y * TILE_SIZE
   }
 }
