@@ -10,6 +10,8 @@ import {
   RECIPES,
   screenToTile,
   TILE_SIZE,
+  TOOLTIP_HEIGHT,
+  TOOLTIP_WIDTH,
 } from '../utils'
 import { Item } from '../sprites/Item'
 
@@ -22,6 +24,7 @@ import { Item } from '../sprites/Item'
 export default class {
   scene: Game
   map: Phaser.Tilemaps.Tilemap
+  tooltip: Phaser.GameObjects.Container
   selectedItem?: Item
   inventoryKey?: string
   items?: Item[]
@@ -63,6 +66,20 @@ export default class {
     this.addItem('slime')
     this.addItem('slime')
 
+    this.tooltip = this.scene.add
+      .container(100, 100, [
+        this.scene.add
+          .rectangle(0, 0, TOOLTIP_WIDTH, TOOLTIP_HEIGHT, 0x000000)
+          .setAlpha(0.8)
+          .setOrigin(0),
+        this.scene.add
+          .text(5, 5, '')
+          .setLineSpacing(10)
+          .setFixedSize(TOOLTIP_WIDTH - 10, TOOLTIP_HEIGHT - 10),
+      ])
+      .setDepth(10)
+      .setAlpha(0)
+
     this.items = new Array(30).fill('').map((_, i) => {
       const item = new Item(this.scene, `item-${i}`, 0, 0)
       this.scene.add.existing(item)
@@ -86,6 +103,12 @@ export default class {
     })
 
     this.scene.input.on('pointermove', (p: any) => {
+      const hoveredItem = this.getClickedItem(p)
+      if (hoveredItem) {
+        this.hoverItem(hoveredItem)
+      } else {
+        this.hideTooltip()
+      }
       if (this.selectedItem?.clickOffset) {
         this.selectedItem.x = p.x - this.selectedItem.clickOffset.x
         this.selectedItem.y = p.y - this.selectedItem.clickOffset.y
@@ -93,6 +116,32 @@ export default class {
     })
 
     this.render()
+  }
+
+  moveToolTip = (x: number, y: number, text?: string) => {
+    if (y > this.scene.cameras.main.height - TOOLTIP_HEIGHT) y -= TOOLTIP_HEIGHT
+    if (x > this.scene.cameras.main.width - TOOLTIP_WIDTH) x -= TOOLTIP_WIDTH
+    this.scene.tweens.add({
+      targets: this.tooltip,
+      x,
+      y,
+      duration: 250,
+      alpha: 1,
+      ease: Phaser.Math.Easing.Quadratic.Out,
+    })
+    // @ts-ignore
+    if (text) this.tooltip.list[1].text = text
+  }
+
+  hideTooltip = () => {
+    this.scene.tweens.add({
+      targets: this.tooltip,
+      alpha: 0,
+      duration: 250,
+      ease: Phaser.Math.Easing.Quadratic.Out,
+    })
+    // @ts-ignore
+    this.tooltip.list[1].text = ''
   }
 
   getClickedItem = (p: any) => {
@@ -319,7 +368,24 @@ export default class {
   }
 
   selectItem = (item?: Item) => {
+    if (!item) return
+
+    this.hideTooltip()
     this.selectedItem = item
+  }
+
+  hoverItem = (item?: Item) => {
+    if (!item || this.selectedItem) return
+    const stats = ITEMS[item.itemType as keyof typeof ITEMS] as any
+
+    this.moveToolTip(
+      item.x + 5,
+      item.y - TOOLTIP_HEIGHT - 5,
+      Object.entries({ key: item.itemType, ...(stats.effects ?? {}) }).reduce(
+        (string, [k, v]) => string + `${k}: ${v}\n`,
+        '',
+      ),
+    )
   }
 
   getTile = (x: number, y: number) => this.map.getTileAt(x, y)

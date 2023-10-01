@@ -138,3 +138,6 @@ export const INITIAL_INV = {
   availableCellCount: 0,
   items: [],
 }
+
+export const TOOLTIP_WIDTH = 175
+export const TOOLTIP_HEIGHT = 150
