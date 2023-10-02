@@ -114,7 +114,10 @@ export class Player extends Phaser.GameObjects.Sprite {
     this.setTexture(texture)
     this.playerType = type
     this.isDying = false
-    this.play(`${type}-idle`)
+    this.play(`${type}-revive`)
+    this.once('animationcomplete', () => {
+      this.play(`${type}-idle`)
+    })
     this.updateStats()
     this.setFlipX(flipX)
     this.setScale(2)
@@ -175,7 +178,8 @@ export class Player extends Phaser.GameObjects.Sprite {
     const newHealth = health - mitigatedDamage
     this.setGameData('health', Math.max(0, newHealth))
 
-    this.play(`${this.playerType}-hit`)
+    if (this.anims.currentAnim.key.includes('idle'))
+      this.play(`${this.playerType}-hit`)
     this.scene.time.delayedCall(ATTACK_SPEED / SPEED, () => {
       if (!this.isDying) this.play(`${this.playerType}-idle`)
     })

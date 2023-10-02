@@ -6,7 +6,7 @@ export const PORTRAIT_SIZE = 64
 export const BAR_WIDTH = 76
 export const BAR_HEIGHT = 16
 export const PLAYER_UI_WIDTH = PORTRAIT_SIZE + BAR_WIDTH
-export const ATTACK_SPEED = 500
+export const ATTACK_SPEED = 350
 export const ITEM_TIMEOUT_DURATION = 10000
 export const SPEED = DEBUG ? 4 : 1
 
@@ -129,35 +129,29 @@ export const ITEMS = {
 
 const DEFAULT_PLAYER = {
   damage: 1,
-  health: 1,
+  health: 10,
   armor: 0,
   experience: 0,
   level: 1,
   flipX: false,
   texture: 'knight',
-  fatigue: 1,
+  fatigue: 25,
   color: 0xffffff,
   drops: [],
 }
 export const STATS = {
   archer: {
     ...DEFAULT_PLAYER,
-    damage: 5,
-    health: 20,
-    fatigue: 10,
-    texture: 'knight',
+    texture: 'archer',
   },
   mage: {
     ...DEFAULT_PLAYER,
-    damage: 5,
-    health: 20,
-    fatigue: 50,
-    texture: 'knight',
+    texture: 'mage',
   },
   knight: {
     ...DEFAULT_PLAYER,
-    damage: 10,
-    health: 100,
+    damage: 1,
+    health: 10,
     fatigue: 25,
     texture: 'knight',
   },
@@ -229,13 +223,13 @@ export const ANIMS = {
   'knight-attack': { frames: [32, 37], frameRate: 12, repeat: 0 },
   'knight-dead': { frames: [96, 104], frameRate: 12, repeat: 0 },
   'knight-hit': { frames: [88, 95], frameRate: 12, repeat: 0 },
-  'mage-dead': { frames: [64, 72], frameRate: 12, repeat: 0 },
   'mage-idle': { frames: [0, 5], frameRate: 12, repeat: -1 },
-  'mage-hit': { frames: [76, 87], frameRate: 12, repeat: 0 },
   'mage-attack': { frames: [24, 32], frameRate: 12, repeat: 0 },
-  'archer-dead': { frames: [72, 79], frameRate: 12, repeat: 0 },
+  'mage-dead': { frames: [64, 72], frameRate: 12, repeat: 0 },
+  'mage-hit': { frames: [76, 87], frameRate: 12, repeat: 0 },
   'archer-idle': { frames: [0, 6], frameRate: 12, repeat: -1 },
   'archer-attack': { frames: [40, 45], frameRate: 12, repeat: 0 },
+  'archer-dead': { frames: [72, 79], frameRate: 12, repeat: 0 },
   'archer-hit': { frames: [64, 68], frameRate: 12, repeat: 0 },
   'green_slime-idle': { frames: [36, 39], frameRate: 6, repeat: -1 },
   'red_slime-idle': { frames: [36, 39], frameRate: 6, repeat: -1 },
@@ -243,10 +237,13 @@ export const ANIMS = {
   'green_slime-hit': { frames: [9, 12], frameRate: 12, repeat: 0 },
   'red_slime-hit': { frames: [9, 12], frameRate: 12, repeat: 0 },
   'blue_slime-hit': { frames: [9, 12], frameRate: 12, repeat: 0 },
+  'green_slime-revive': { frames: [8, 2], frameRate: 12, repeat: 0 },
+  'red_slime-revive': { frames: [8, 2], frameRate: 12, repeat: 0 },
+  'blue_slime-revive': { frames: [8, 2], frameRate: 12, repeat: 0 },
   'green_slime-dead': { frames: [0, 8], frameRate: 12, repeat: 0 },
   'red_slime-dead': { frames: [0, 8], frameRate: 12, repeat: 0 },
   'blue_slime-dead': { frames: [0, 8], frameRate: 12, repeat: 0 },
-  'green_slime-attack': { frames: [27, 35], frameRate: 12, repeat: -1 },
-  'red_slime-attack': { frames: [27, 35], frameRate: 12, repeat: -1 },
-  'blue_slime-attack': { frames: [27, 35], frameRate: 12, repeat: -1 },
+  'green_slime-attack': { frames: [27, 31], frameRate: 12, repeat: 0 },
+  'red_slime-attack': { frames: [27, 31], frameRate: 12, repeat: 0 },
+  'blue_slime-attack': { frames: [27, 31], frameRate: 12, repeat: 0 },
 }
