@@ -1,7 +1,7 @@
 {
-  "name": "ld2023",
+  "name": "overencumbered",
   "version": "1.1.0",
-  "description": "ld2023",
+  "description": "overencumbered",
   "main": "dist/index.js",
   "scripts": {
     "dev": "vite --port 9191",
@@ -9,15 +9,15 @@
     "serve": "vite preview",
     "deploy": "gh-pages -d dist"
   },
-  "homepage": "/ld2023",
+  "homepage": "/overencumbered",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dwhiffing/ld2023.git"
+    "url": "git+https://github.com/dwhiffing/overencumbered.git"
   },
   "author": "Daniel Whiffing",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/dwhiffing/ld2023/issues"
+    "url": "https://github.com/dwhiffing/overencumbered/issues"
   },
   "devDependencies": {
     "@rollup/plugin-alias": "^3.1.9",
