@@ -1,7 +1,7 @@
 import Game from '../scenes/Game'
 import { Player } from '../sprites/Player'
 import { PlayerUI } from '../sprites/PlayerUI'
-import { LEVELS, PLAYER_UI_WIDTH } from '../utils'
+import { LEVELS, PLAYER_UI_WIDTH, SPEED } from '../utils'
 
 export default class {
   scene: Game
@@ -104,7 +104,7 @@ export default class {
       })
     ) {
       this.scene.data.set('is-next-room', true)
-      this.scene.time.delayedCall(2000, () => {
+      this.scene.time.delayedCall(2000 / SPEED, () => {
         this.nextRoom()
       })
     }
@@ -114,7 +114,8 @@ export default class {
       })
     ) {
       this.scene.data.set('is-next-room', true)
-      this.scene.time.delayedCall(2000, () => {
+      this.scene.time.delayedCall(2000 / SPEED, () => {
+        this.scene.data.set('is-next-room', false)
         this.scene.gameover()
       })
     }

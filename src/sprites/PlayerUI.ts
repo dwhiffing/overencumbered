@@ -14,7 +14,7 @@ export class PlayerUI {
   bg: Phaser.GameObjects.Rectangle
   bars: Bar[]
   xpBar: Bar
-  portrait: Phaser.GameObjects.Rectangle
+  portrait: Phaser.GameObjects.Sprite
   healthBar: Bar
   manaBar: Bar
   fatigueBar: Bar
@@ -30,8 +30,9 @@ export class PlayerUI {
       .setOrigin(0)
       .setInteractive()
       .on('pointerdown', () => {
+        if (!this.isActive) return
         this.scene.dungeonService?.uis.forEach((ui) => ui.deselect())
-        if (this.isActive) this.select()
+        this.select()
         this.scene.inventoryService?.setActiveInventoryKey(this.key)
       })
 
@@ -46,14 +47,9 @@ export class PlayerUI {
       .setOrigin(0)
 
     this.portrait = this.scene.add
-      .rectangle(
-        x + 2,
-        y + 2,
-        PORTRAIT_SIZE - 4,
-        PORTRAIT_SIZE - 4,
-        this.scene.data.values[`player-${key}`].color,
-      )
+      .sprite(x, y, 'portrait', key.split('-')[1])
       .setOrigin(0)
+      .setAlpha(0)
 
     this.healthBar = new Bar(
       this.scene,
@@ -98,7 +94,6 @@ export class PlayerUI {
   setupListeners(key: string) {
     this.scene.data.events.off(`changedata-player-${this.key}`, this.update)
     this.key = key
-    this.portrait.setFillStyle(this.scene.data.values[`player-${key}`].color)
     this.scene.data.events.on(`changedata-player-${key}`, this.update)
     const d = this.scene.data.get(`player-${key}`)
     this.healthBar.setMax(d?.health ?? 0)
@@ -117,11 +112,13 @@ export class PlayerUI {
 
   hide() {
     this.isActive = false
+    this.portrait.setAlpha(0)
     this.bars.forEach((b) => b.hide())
   }
 
   show() {
     this.isActive = true
+    this.portrait.setAlpha(1)
     this.bars.forEach((b) => b.show())
   }
 

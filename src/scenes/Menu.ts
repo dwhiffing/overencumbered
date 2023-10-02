@@ -1,4 +1,5 @@
 import Phaser from 'phaser'
+import { SPEED } from '../utils'
 
 export default class Menu extends Phaser.Scene {
   music?: Phaser.Sound.BaseSound
@@ -12,7 +13,7 @@ export default class Menu extends Phaser.Scene {
   }
 
   create() {
-    this.cameras.main.fadeFrom(1000, 0, 0, 0, true)
+    this.cameras.main.fadeFrom(1000 / SPEED, 0, 0, 0, true)
     this.add
       .text(210, 200, 'Overencumbered', { fontSize: '32pt' })
       .setAlign('center')
@@ -32,7 +33,7 @@ export default class Menu extends Phaser.Scene {
   update() {}
 
   start = () => {
-    this.cameras.main.fade(1000, 0, 0, 0, true, (a: any, b: number) => {
+    this.cameras.main.fade(1000 / SPEED, 0, 0, 0, true, (a: any, b: number) => {
       if (b === 1) this.scene.start('GameScene')
     })
   }

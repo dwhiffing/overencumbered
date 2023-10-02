@@ -51,16 +51,15 @@ export class Item extends Phaser.GameObjects.Sprite {
       })
 
     this.setDepth(2)
-    this.setTintFill(0xffff55)
   }
 
   spawn(itemType?: string, itemKey?: string) {
     const stats = ITEMS[itemType as keyof typeof ITEMS]
     if (stats) {
-      this.setTintFill(stats.color)
       if (stats.width) {
         this.setScale(stats.width ?? 1, stats.height ?? 1)
       }
+      this.setFrame(stats.frame)
     }
     if (itemType) this.itemType = itemType
     if (itemKey) this.itemKey = itemKey

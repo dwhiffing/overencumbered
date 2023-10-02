@@ -5,6 +5,7 @@ import { Bar } from './Bar'
 export class Player extends Phaser.GameObjects.Sprite {
   dataKey: string
   playerType?: string
+  isDying?: boolean
   tintColor: number
   healthBar: Bar
   fatigueBar: Bar
@@ -43,6 +44,7 @@ export class Player extends Phaser.GameObjects.Sprite {
       'green',
     )
     this.fatigueBar.hide()
+    this.isDying = true
     this.setAlpha(0)
 
     this.scene.time.addEvent({
@@ -53,7 +55,7 @@ export class Player extends Phaser.GameObjects.Sprite {
   }
 
   tick() {
-    if (this.alpha === 0) return
+    if (this.isDying) return
     if (this.getGameData().fatigue >= this.getGameData().maxFatigue) {
       this.takeAction()
     } else {
@@ -101,17 +103,21 @@ export class Player extends Phaser.GameObjects.Sprite {
       isEnemy
         ? this.scene.dungeonService!.players
         : this.scene.dungeonService!.enemies
-    ).filter((f) => f.alpha)
+    ).filter((f) => !f.isDying)
 
     return targets[0]!
   }
 
   spawn(type: string) {
-    let { health, fatigue, color, level, experience } =
+    let { health, fatigue, texture, flipX, color, level, experience } =
       STATS[type as keyof typeof STATS]
+    this.setTexture(texture)
     this.playerType = type
-    this.setTintFill(color)
+    this.isDying = false
+    this.play(`${type}-idle`)
     this.updateStats()
+    this.setFlipX(flipX)
+    this.setScale(2)
     this.setGameData('health', health)
     this.setGameData('level', level)
     this.setGameData('experience', experience)
@@ -137,12 +143,17 @@ export class Player extends Phaser.GameObjects.Sprite {
   }
 
   attack(target: Player) {
+    if (this.isDying) return
     this.updateStats()
+    this.play(`${this.playerType}-attack`)
     this.scene.tweens.add({
       targets: this,
       x: this.x + (this.x > 200 ? -20 : 20),
       duration: ATTACK_SPEED / SPEED,
       yoyo: true,
+      onComplete: () => {
+        if (!this.isDying) this.play(`${this.playerType}-idle`)
+      },
       onYoyo: () => {
         target.damage(this.getGameData()?.damage ?? 1, this)
       },
@@ -163,9 +174,12 @@ export class Player extends Phaser.GameObjects.Sprite {
     const mitigatedDamage = incomingDamage - armor
     const newHealth = health - mitigatedDamage
     this.setGameData('health', Math.max(0, newHealth))
-    this.setTintFill(0xffffff)
+
+    this.play(`${this.playerType}-hit`)
+    this.scene.time.delayedCall(ATTACK_SPEED / SPEED, () => {
+      if (!this.isDying) this.play(`${this.playerType}-idle`)
+    })
     this.scene.time.delayedCall(ATTACK_SPEED / SPEED / 2, () => {
-      this.setTintFill(this.getGameData().color)
       if (newHealth <= 0) this.die(damager)
     })
   }
@@ -189,11 +203,12 @@ export class Player extends Phaser.GameObjects.Sprite {
   }
 
   die(damager: Player) {
-    if (this.alpha === 0) return
+    if (this.isDying) return
+    this.isDying = true
     this.setGameData('health', 0)
     this.healthBar?.hide()
     this.fatigueBar?.hide()
-    this.setAlpha(0)
+    this.play(`${this.playerType}-dead`)
 
     const counters = this.scene.data.values['loot-counters']
     const killCount = counters?.[this.playerType!] ?? 0
@@ -205,8 +220,6 @@ export class Player extends Phaser.GameObjects.Sprite {
     damager.getExperience(this.getGameData().level)
     const isEnemy = !!this.dataKey.match(/enemy/)
     if (isEnemy) {
-      // if (Phaser.Math.RND.between(0, 1) !== 0) return
-
       this.scene.data.values['loot-counters'] = {
         ...counters,
         [this.playerType!]: killCount + 1,
